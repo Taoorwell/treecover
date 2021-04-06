@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
         plt.title('Accuracy:{:.2%}'.format(acc))
         # plt.show()
-        plt.savefig('pre/Image_{}_pre'.format(image_id))
+        plt.savefig('pre/treecover/Image_{}_pre'.format(image_id))
         print('finish: {}'.format(i))
         if i == 34:
             break
@@ -88,10 +88,6 @@ if __name__ == '__main__':
     # tensorboard
     # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir',
     #                                                        histogram_freq=1)
-    # model train and validation
-    # train_writer = tf.summary.create_file_writer("logs/train/")
-    # test_writer = tf.summary.create_file_writer("logs/test/")
-    # train_step = test_step = 0
 
     # model.fit(train_dataset, steps_per_epoch=90, epochs=50,
     #           callbacks=[tensorboard_callbacks])
