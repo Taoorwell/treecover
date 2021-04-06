@@ -76,16 +76,16 @@ def build_res_unet(input_shape):
     inputs = Input(shape=input_shape)
     '''encoder'''
     to_decoder = encoder(inputs)
-    print(to_decoder[0].shape, to_decoder[1].shape, to_decoder[2].shape)
+    # print(to_decoder[0].shape, to_decoder[1].shape, to_decoder[2].shape)
     '''bridge'''
     path = res_block(to_decoder[2], [512, 512], [(2, 2), (1, 1)])
-    print('bridge output shape:', path.shape)
+    # print('bridge output shape:', path.shape)
     '''decoder'''
     path = decoder(path, from_encoder=to_decoder)
-    print('decoder:', path.shape)
+    # print('decoder:', path.shape)
     '''output'''
     path = Conv2D(filters=1, kernel_size=(1, 1), activation='sigmoid')(path)
-    print('final output shape:', path.shape)
+    # print('final output shape:', path.shape)
     return Model(inputs=inputs, outputs=path)
 
 
