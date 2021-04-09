@@ -9,7 +9,9 @@ def load_data(path, mode):
     images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
     masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
     if mode == 'train':
-        image_path, mask_path = images_path[:-35], masks_path[0:-35]
+        image_path, mask_path = images_path[:270], masks_path[0:270]
+    elif mode == 'valid':
+        image_path, mask_path = images_path[270:-35], masks_path[270:-35]
     else:
         image_path, mask_path = images_path[-35:], masks_path[-35:]
     return image_path, mask_path
@@ -65,3 +67,7 @@ palette = {0: (255, 255, 255),  # White
            14: (255, 128, 255),
            15: (165, 42, 42),
            16: (175, 238, 238)}
+
+# if __name__ == '__main__':
+#     image_path, mask_path = load_data(path='../', mode='train')
+#     print(len(image_path))
