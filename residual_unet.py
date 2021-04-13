@@ -4,12 +4,13 @@ from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, BatchNormalizat
 
 
 def res_block(x, nb_filters, strides):
-    res_path = BatchNormalization()(x)
-    res_path = Activation(activation='relu')(res_path)
-    res_path = Conv2D(filters=nb_filters[0], kernel_size=(3, 3), padding='same', strides=strides[0])(res_path)
+    res_path = Conv2D(filters=nb_filters[0], kernel_size=(3, 3), padding='same', strides=strides[0])(x)
     res_path = BatchNormalization()(res_path)
     res_path = Activation(activation='relu')(res_path)
+
     res_path = Conv2D(filters=nb_filters[1], kernel_size=(3, 3), padding='same', strides=strides[1])(res_path)
+    res_path = BatchNormalization()(res_path)
+    res_path = Activation(activation='relu')(res_path)
 
     shortcut = Conv2D(nb_filters[1], kernel_size=(3, 3), strides=strides[0], padding='same')(x)
     shortcut = BatchNormalization()(shortcut)
@@ -21,29 +22,19 @@ def res_block(x, nb_filters, strides):
 def encoder(x):
     to_decoder = []
 
-    main_path = Conv2D(filters=64, kernel_size=(3, 3), padding='same', strides=(1, 1))(x)
-    main_path = BatchNormalization()(main_path)
-    main_path = Activation(activation='relu')(main_path)
+    main_path = res_block(x, [32, 32], [(1, 1), (1, 1)])
+    to_decoder.append(main_path)
 
-    main_path = Conv2D(filters=64, kernel_size=(3, 3), padding='same', strides=(1, 1))(main_path)
-
-    shortcut = Conv2D(filters=64, kernel_size=(1, 1), strides=(1, 1), padding='same')(x)
-    shortcut = BatchNormalization()(shortcut)
-
-    main_path = add([shortcut, main_path])
-    # first branching to decoder
+    main_path = res_block(main_path, [64, 64], [(2, 2), (1, 1)])
     to_decoder.append(main_path)
 
     main_path = res_block(main_path, [128, 128], [(2, 2), (1, 1)])
     to_decoder.append(main_path)
 
-    main_path = res_block(main_path, [256, 256], [(2, 2), (1, 1)])
-    to_decoder.append(main_path)
-
     return to_decoder
 
 
-def pad_concatenate(x1, x2):
+def slice_concatenate(x1, x2):
     if x1.shape != x2.shape:
         x1 = x1[:, :x2.shape[1], :x2.shape[2], :]
     x = concatenate([x1, x2], axis=3)
@@ -52,22 +43,19 @@ def pad_concatenate(x1, x2):
 
 def decoder(x, from_encoder):
     main_path = UpSampling2D(size=(2, 2))(x)
-    main_path = pad_concatenate(main_path, from_encoder[2])
+    main_path = slice_concatenate(main_path, from_encoder[2])
     # main_path = concatenate((main_path, from_encoder[2]), axis=3)
-
-    main_path = res_block(main_path, [256, 256], [(1, 1), (1, 1)])
-
-    main_path = UpSampling2D(size=(2, 2))(main_path)
-    main_path = pad_concatenate(main_path, from_encoder[1])
-    # main_path = concatenate((main_path, from_encoder[1]), axis=3)
-
     main_path = res_block(main_path, [128, 128], [(1, 1), (1, 1)])
 
     main_path = UpSampling2D(size=(2, 2))(main_path)
-    main_path = pad_concatenate(main_path, from_encoder[0])
-    # main_path = concatenate((main_path, from_encoder[0]), axis=3)
-
+    main_path = slice_concatenate(main_path, from_encoder[1])
+    # main_path = concatenate((main_path, from_encoder[1]), axis=3)
     main_path = res_block(main_path, [64, 64], [(1, 1), (1, 1)])
+
+    main_path = UpSampling2D(size=(2, 2))(main_path)
+    main_path = slice_concatenate(main_path, from_encoder[0])
+    # main_path = concatenate((main_path, from_encoder[0]), axis=3)
+    main_path = res_block(main_path, [32, 32], [(1, 1), (1, 1)])
 
     return main_path
 
@@ -78,7 +66,7 @@ def build_res_unet(input_shape):
     to_decoder = encoder(inputs)
     # print(to_decoder[0].shape, to_decoder[1].shape, to_decoder[2].shape)
     '''bridge'''
-    path = res_block(to_decoder[2], [512, 512], [(2, 2), (1, 1)])
+    path = res_block(to_decoder[2], [128, 128], [(2, 2), (1, 1)])
     # print('bridge output shape:', path.shape)
     '''decoder'''
     path = decoder(path, from_encoder=to_decoder)
@@ -105,8 +93,15 @@ def cedice_loss(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
     loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred) + dice_loss(y_true, y_pred)
     return tf.reduce_mean(loss)
+    # return loss
 
 
 # if __name__ == '__main__':
-#     model = build_res_unet((1000, 1000, 7))
-#     model.summary()
+#     c = tf.constant([[1.0, 1.0], [0.0, 0.0]])
+#     d = tf.constant([[0.5, 0.6], [0.2, 0.1]])
+#     print('dice_loss:', dice_loss(c, d))
+#     print('ce_dice_loss:',  cedice_loss(c, d))
+#     print('dice_accuracy:', dice(c, d))
+
+    # model = build_res_unet((333, 333, 7))
+    # model.summary()

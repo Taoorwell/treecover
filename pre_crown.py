@@ -29,7 +29,7 @@ if __name__ == '__main__':
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
     model = build_res_unet((1000, 1000, 7))
-    model.load_weights('checkpoints/ckpt')
+    model.load_weights('checkpoints/ckpt-1')
     for i, (image, mask) in enumerate(datasets):
         mask_pred = model.predict(image)
         acc = dice(mask, mask_pred)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
         plt.title('Accuracy:{:.2%}'.format(acc))
         # plt.show()
-        plt.savefig('pre/treecrown/Image_{}_pre'.format(image_id))
+        plt.savefig('pre/treecrown/Image_{}_pre_1'.format(image_id))
         print('finish: {}'.format(i))
         if i == 34:
             break
