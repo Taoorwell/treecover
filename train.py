@@ -88,21 +88,28 @@ if __name__ == '__main__':
     # model.summary()
 
     # model compile
-        model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.001),
+        initial_learning_rate = 0.01
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=initial_learning_rate,
+            decay_steps=1000,
+            decay_rate=0.96,
+            staircase=True
+        )
+        model.compile(optimizer=tf.optimizers.Adam(learning_rate=lr_schedule),
                       loss=dice_loss, metrics=[dice])
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_dice',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_cedice_lr_decay',
                                                            histogram_freq=1)
 
     model.fit(train_dataset,
-              steps_per_epoch=90,
-              epochs=50,
+              steps_per_epoch=train_steps,
+              epochs=100,
               validation_data=valid_dataset,
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_dice')
+    model.save_weights('checkpoints/ckpt-1m_cedice_lr_decay')
 
 
 
