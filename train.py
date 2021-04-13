@@ -89,10 +89,10 @@ if __name__ == '__main__':
 
     # model compile
         model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.001),
-                      loss=cedice_loss, metrics=[dice])
+                      loss=dice_loss, metrics=[dice])
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_cedice',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_dice',
                                                            histogram_freq=1)
 
     model.fit(train_dataset,
@@ -102,7 +102,7 @@ if __name__ == '__main__':
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_cedice')
+    model.save_weights('checkpoints/ckpt-1m_dice')
 
 
 
