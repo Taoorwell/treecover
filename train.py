@@ -36,7 +36,6 @@ if __name__ == '__main__':
     batch_size = 3
     train_steps = 270 // batch_size
     valid_steps = 25 // batch_size
-    epochs = 50
     # image_path, mask_path = load_data(path='../', mode='test')
     train_dataset = image_dataset(path='../', mode='train',
                                   width=width, batch_size=batch_size)
@@ -46,7 +45,7 @@ if __name__ == '__main__':
     #                              width=width, batch_size=1)
     # model restore
     # model = build_res_unet(input_shape=(width, width, 7))
-    # model.load_weights('checkpoints/ckpt-1')
+    # model.load_weights('checkpoints/ckpt')
 
     # for i, (image, mask) in enumerate(test_dataset):
     #     mask_pred = model.predict(image)
@@ -74,7 +73,7 @@ if __name__ == '__main__':
     #
     #     plt.title('Accuracy:{:.2%}'.format(acc))
     #     # plt.show()
-    #     plt.savefig('pre/treecover/Image_{}_pre_1'.format(image_id))
+    #     plt.savefig('pre/treecover/Image_{}_pre'.format(image_id))
     #     print('finish: {}'.format(i))
     #     if i == 34:
     #         break
@@ -87,22 +86,23 @@ if __name__ == '__main__':
     with strategy.scope():
         model = build_res_unet(input_shape=(width, width, 7))
     # model.summary()
+
     # model compile
         model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.001),
-                      loss=cedice_loss, metrics=[dice])
+                      loss=dice_loss, metrics=[dice])
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_cedic/',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir',
                                                            histogram_freq=1)
 
     model.fit(train_dataset,
-              steps_per_epoch=train_steps,
-              epochs=epochs,
+              steps_per_epoch=90,
+              epochs=50,
               validation_data=valid_dataset,
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_cedic')
+    model.save_weights('checkpoints/ckpt-1')
 
 
 
