@@ -77,6 +77,12 @@ def build_res_unet(input_shape):
     return Model(inputs=inputs, outputs=path)
 
 
+def Iou(y_true, y_pred):
+    numerator = tf.reduce_sum(y_true * y_pred)
+    denominator = tf.reduce_sum(y_true + y_pred)
+    return numerator / (denominator - numerator)
+
+
 def dice(y_true, y_pred):
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
@@ -89,19 +95,24 @@ def dice_loss(y_true, y_pred):
     return 1 - (numerator / denominator)
 
 
-def cedice_loss(y_true, y_pred):
+def cross_entropy(y_true, y_pred):
+    cost = -(y_true * tf.math.log(y_pred) + (1 - y_true) * tf.math.log(1 - y_pred))
+    return tf.reduce_mean(cost)
+
+
+def combined_loss(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
-    loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred) + dice_loss(y_true, y_pred)
+    loss = cross_entropy(y_true, y_pred) + dice_loss(y_true, y_pred)
     return tf.reduce_mean(loss)
-    # return loss
 
 
-# if __name__ == '__main__':
-#     c = tf.constant([[1.0, 1.0], [0.0, 0.0]])
-#     d = tf.constant([[0.5, 0.6], [0.2, 0.1]])
-#     print('dice_loss:', dice_loss(c, d))
-#     print('ce_dice_loss:',  cedice_loss(c, d))
-#     print('dice_accuracy:', dice(c, d))
-
+if __name__ == '__main__':
+    c = tf.constant([[1.0, 1.0], [0.0, 0.0]])
+    d = tf.constant([[0.5, 0.6], [0.2, 0.1]])
+    print('dice_loss:', dice_loss(c, d))
+    print('cross_entropy:', cross_entropy(c, d))
+    print('combined_loss:',  combined_loss(c, d))
+    print('dice_accuracy:', dice(c, d))
+    print('IoU_accuracy:', Iou(c, d))
     # model = build_res_unet((333, 333, 7))
     # model.summary()

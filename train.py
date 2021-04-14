@@ -88,7 +88,7 @@ if __name__ == '__main__':
     # model.summary()
 
     # model compile
-        initial_learning_rate = 0.01
+        initial_learning_rate = 0.001
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
             initial_learning_rate=initial_learning_rate,
             decay_steps=1000,
@@ -96,10 +96,10 @@ if __name__ == '__main__':
             staircase=True
         )
         model.compile(optimizer=tf.optimizers.Adam(learning_rate=lr_schedule),
-                      loss=cedice_loss, metrics=[dice])
+                      loss=combined_loss, metrics=[dice])
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_cedice_lr_decay',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_dice_lr_decay',
                                                            histogram_freq=1)
 
     model.fit(train_dataset,
@@ -109,7 +109,7 @@ if __name__ == '__main__':
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_cedice_lr_decay')
+    model.save_weights('checkpoints/ckpt-1m_combined_dice_lr_decay')
 
 
 
