@@ -96,8 +96,9 @@ def dice_loss(y_true, y_pred):
 
 
 def cross_entropy(y_true, y_pred):
-    cost = -(y_true * tf.math.log(y_pred) + (1 - y_true) * tf.math.log(1 - y_pred))
-    return tf.reduce_mean(cost)
+    # cost = -(y_true * tf.math.log(y_pred) + (1 - y_true) * tf.math.log(1 - y_pred))
+    loss = tf.keras.losses.binary_crossentropy(y_true, y_pred)
+    return tf.reduce_mean(loss)
 
 
 def combined_loss(y_true, y_pred):
