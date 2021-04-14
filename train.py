@@ -99,7 +99,7 @@ if __name__ == '__main__':
                       loss=combined_loss, metrics=[dice])
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_dice_lr_decay',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_loss_lr_decay',
                                                            histogram_freq=1)
 
     model.fit(train_dataset,
@@ -109,7 +109,7 @@ if __name__ == '__main__':
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_combined_dice_lr_decay')
+    model.save_weights('checkpoints/ckpt-1m_combined_loss_lr_decay')
 
 
 
