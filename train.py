@@ -96,7 +96,7 @@ if __name__ == '__main__':
             staircase=True
         )
         model.compile(optimizer=tf.optimizers.Adam(learning_rate=lr_schedule),
-                      loss=dice_loss, metrics=[dice])
+                      loss=cedice_loss, metrics=[dice])
 
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_cedice_lr_decay',
