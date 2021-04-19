@@ -100,16 +100,19 @@ if __name__ == '__main__':
         model.compile(optimizer=tf.optimizers.Adam(learning_rate=initial_learning_rate),
                       loss=combined_loss, metrics=[dice])
 
-
         def lr_exponential_decay(epoch):
             # something happen
             decay_rate = 0.04
             return initial_learning_rate * math.pow(decay_rate, epoch / epochs)
 
+        def lr_cosine_decay(epoch):
+            cosine_decay = 0.5 * (1 + math.cos(math.pi * epoch / epochs))
+            return initial_learning_rate * cosine_decay
+
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_loss_lr_decay',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_loss_lr_decay_cosine',
                                                            histogram_freq=1)
-    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_exponential_decay, verbose=1)
+    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=1)
 
     model.fit(train_dataset,
               steps_per_epoch=train_steps,
@@ -118,7 +121,7 @@ if __name__ == '__main__':
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks, learning_rate_scheduler])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_combined_loss_lr_decay')
+    model.save_weights('checkpoints/ckpt-1m_combined_loss_lr_decay_cosine')
 
 
 
