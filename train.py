@@ -1,3 +1,4 @@
+import math
 import tensorflow as tf
 from utility import *
 from residual_unet import *
@@ -36,6 +37,7 @@ if __name__ == '__main__':
     batch_size = 3
     train_steps = 270 // batch_size
     valid_steps = 25 // batch_size
+    epochs = 100
     # image_path, mask_path = load_data(path='../', mode='test')
     train_dataset = image_dataset(path='../', mode='train',
                                   width=width, batch_size=batch_size)
@@ -88,26 +90,33 @@ if __name__ == '__main__':
     # model.summary()
 
     # model compile
-        initial_learning_rate = 0.001
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=initial_learning_rate,
-            decay_steps=900,
-            decay_rate=0.96,
-            staircase=True
-        )
-        model.compile(optimizer=tf.optimizers.Adam(learning_rate=lr_schedule),
+        initial_learning_rate = 0.01
+        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        #     initial_learning_rate=initial_learning_rate,
+        #     decay_steps=900,
+        #     decay_rate=0.96,
+        #     staircase=True
+        # )
+        model.compile(optimizer=tf.optimizers.Adam(learning_rate=initial_learning_rate),
                       loss=combined_loss, metrics=[dice])
+
+
+        def lr_exponential_decay(epoch):
+            # something happen
+            decay_rate = 0.04
+            return initial_learning_rate * math.pow(decay_rate, epoch / epochs)
 
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_loss_lr_decay',
                                                            histogram_freq=1)
+    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_exponential_decay, verbose=1)
 
     model.fit(train_dataset,
               steps_per_epoch=train_steps,
-              epochs=100,
+              epochs=epochs,
               validation_data=valid_dataset,
               validation_steps=valid_steps,
-              callbacks=[tensorboard_callbacks])
+              callbacks=[tensorboard_callbacks, learning_rate_scheduler])
     # model.save('model.h5')
     model.save_weights('checkpoints/ckpt-1m_combined_loss_lr_decay')
 
