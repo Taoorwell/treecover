@@ -31,7 +31,7 @@ def image_dataset(path, mode, width, batch_size):
         image, mask = image_mask
         image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
         mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
-        if tf.random.uniform(()) > 0.5:
+        if np.random.uniform((0)) > 0.5:
             new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
             image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
             mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
