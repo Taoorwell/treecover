@@ -1,11 +1,13 @@
 import math
+import json
 import tensorflow as tf
 from utility import *
 from residual_unet import *
 # from matplotlib import pyplot as plt
-
-
+# tf_config = json.loads(os.environ['TF_CONFIG'])
 # Datasets construction
+
+
 def image_dataset(path, mode, width, batch_size):
     images_path, masks_path = load_data(path, mode)
     datasets = tf.data.Dataset.from_tensor_slices((images_path, masks_path))
@@ -31,7 +33,7 @@ def image_dataset(path, mode, width, batch_size):
         image, mask = image_mask
         image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
         mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
-        if np.random.uniform((0)) > 0.5:
+        if np.random.uniform((0)) > 0.5 and mode == 'train':
             new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
             image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
             mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
