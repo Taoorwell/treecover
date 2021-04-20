@@ -107,12 +107,19 @@ def combined_loss(y_true, y_pred):
     return tf.reduce_mean(loss)
 
 
+def combined_log_loss(y_true, y_pred):
+    y_true = tf.cast(y_true, tf.float32)
+    loss = cross_entropy(y_true, y_pred) - tf.math.log(dice(y_true, y_pred))
+    return tf.reduce_mean(loss)
+
+
 if __name__ == '__main__':
     c = tf.constant([[1.0, 1.0], [0.0, 0.0]])
     d = tf.constant([[0.5, 0.6], [0.2, 0.1]])
     print('dice_loss:', dice_loss(c, d))
     print('cross_entropy:', cross_entropy(c, d))
     print('combined_loss:',  combined_loss(c, d))
+    print('combined_log_loss:', combined_log_loss(c, d))
     print('dice_accuracy:', dice(c, d))
     print('IoU_accuracy:', Iou(c, d))
     # model = build_res_unet((333, 333, 7))
