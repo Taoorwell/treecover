@@ -84,17 +84,16 @@ def Iou(y_true, y_pred):
 
 
 def dice(y_true, y_pred):
-    eps = 1E-15
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
-    return (numerator + eps) / (denominator + eps)
+    return numerator / denominator
 
 
 def dice_loss(y_true, y_pred):
     eps = 1E-15
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
-    return 1 - ((numerator + eps) / (denominator + eps))
+    return 1 - (numerator / denominator)
 
 
 def cross_entropy(y_true, y_pred):
@@ -110,8 +109,9 @@ def combined_loss(y_true, y_pred):
 
 
 def combined_log_loss(y_true, y_pred):
+    eps = 1e-15
     y_true = tf.cast(y_true, tf.float32)
-    loss = cross_entropy(y_true, y_pred) - tf.math.log(dice(y_true, y_pred))
+    loss = cross_entropy(y_true, y_pred) - tf.math.log(Iou(y_true, y_pred) + eps)
     return tf.reduce_mean(loss)
 
 
