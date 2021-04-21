@@ -57,7 +57,7 @@ if __name__ == '__main__':
     width = 256
     batch_size = 3
     train_steps = (270 // batch_size) * 4
-    valid_steps = (25 // batch_size) * 4
+    valid_steps = 25 // batch_size
     epochs = 100
     # image_path, mask_path = load_data(path='../', mode='test')
     train_dataset = image_dataset(path='../', mode='train',
