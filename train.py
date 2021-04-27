@@ -33,7 +33,7 @@ def image_dataset(path, mode, width, batch_size):
         image, mask = image_mask
         image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
         mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
-        if np.random.uniform((0)) > 0.5 and mode == 'train':
+        if np.random.uniform((0)) > 0.5:
             new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
             image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
             mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
@@ -49,7 +49,13 @@ def image_dataset(path, mode, width, batch_size):
     datasets = datasets.map(f, num_parallel_calls=tf.data.AUTOTUNE)
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
+
     datasets = datasets.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+    options = tf.data.Options()
+    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
+    datasets = datasets.with_options(options)
+
     return datasets
 
 
@@ -57,7 +63,7 @@ if __name__ == '__main__':
     width = 256
     batch_size = 3
     train_steps = (270 // batch_size) * 4
-    valid_steps = 25 // batch_size
+    valid_steps = (25 // batch_size) * 4
     epochs = 100
     # image_path, mask_path = load_data(path='../', mode='test')
     train_dataset = image_dataset(path='../', mode='train',
@@ -111,15 +117,10 @@ if __name__ == '__main__':
     # model.summary()
 
     # model compile
-        initial_learning_rate = 0.01
-        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        #     initial_learning_rate=initial_learning_rate,
-        #     decay_steps=900,
-        #     decay_rate=0.96,
-        #     staircase=True
-        # )
+        initial_learning_rate = 0.0001
+
         model.compile(optimizer=tf.optimizers.Adam(learning_rate=initial_learning_rate),
-                      loss=combined_log_loss, metrics=[dice])
+                      loss=combined_log_loss, metrics=[Iou])
 
         def lr_exponential_decay(epoch):
             # something happen

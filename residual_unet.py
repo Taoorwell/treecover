@@ -90,14 +90,12 @@ def dice(y_true, y_pred):
 
 
 def dice_loss(y_true, y_pred):
-    eps = 1E-15
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
     return 1 - (numerator / denominator)
 
 
 def cross_entropy(y_true, y_pred):
-    # cost = -(y_true * tf.math.log(y_pred) + (1 - y_true) * tf.math.log(1 - y_pred))
     loss = tf.keras.losses.binary_crossentropy(y_true, y_pred)
     return tf.reduce_mean(loss)
 
@@ -105,19 +103,19 @@ def cross_entropy(y_true, y_pred):
 def combined_loss(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
     loss = cross_entropy(y_true, y_pred) + dice_loss(y_true, y_pred)
-    return tf.reduce_mean(loss)
+    return loss
 
 
 def combined_log_loss(y_true, y_pred):
-    eps = 1e-15
+    eps = 1E-15
     y_true = tf.cast(y_true, tf.float32)
     loss = cross_entropy(y_true, y_pred) - tf.math.log(Iou(y_true, y_pred) + eps)
-    return tf.reduce_mean(loss)
+    return loss
 
 
 if __name__ == '__main__':
     c = tf.constant([[1.0, 1.0], [0.0, 0.0]])
-    d = tf.constant([[0.5, 0.6], [0.2, 0.1]])
+    d = tf.constant([[0.01, 0.01], [0.99, 0.99]])
     print('dice_loss:', dice_loss(c, d))
     print('cross_entropy:', cross_entropy(c, d))
     print('combined_loss:',  combined_loss(c, d))

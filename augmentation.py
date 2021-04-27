@@ -55,7 +55,7 @@ if __name__ == '__main__':
     batch_size = 1
     train_dataset = image_dataset(path, mode, width, batch_size)
     for i, (image, mask) in enumerate(train_dataset):
-        if i == 0 or i % 270 == 0:
+        if i == 0 or i % 25 == 0:
             image1, mask1 = image[0], mask[0]
             plt.subplot(1, 2, 1)
             plt.imshow(image1.numpy()[:, :, [4, 3, 2]])
