@@ -8,12 +8,18 @@ from matplotlib import pyplot as plt
 def load_data(path, mode):
     images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
     masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
+    np.random.seed(seed=1)
+    idx = np.random.permutation(np.arange(len(images_path)))
+    test_idx = idx[:29]
+    train_valid_idx = [x for x in idx if x not in test_idx]
+    train_idx = train_valid_idx[:250]
+    valid_idx = train_valid_idx[250:]
     if mode == 'train':
-        image_path, mask_path = images_path[:270], masks_path[0:270]
+        image_path, mask_path = [images_path[x] for x in train_idx], [masks_path[x] for x in train_idx]
     elif mode == 'valid':
-        image_path, mask_path = images_path[270:-35], masks_path[270:-35]
+        image_path, mask_path = [images_path[x] for x in valid_idx], [masks_path[x] for x in valid_idx]
     else:
-        image_path, mask_path = images_path[-35:], masks_path[-35:]
+        image_path, mask_path = [images_path[x] for x in test_idx ], [masks_path[x] for x in test_idx]
     return image_path, mask_path
 
 

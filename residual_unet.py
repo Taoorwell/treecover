@@ -114,8 +114,8 @@ def combined_log_loss(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    c = tf.constant([[1.0, 1.0], [0.0, 0.0]])
-    d = tf.constant([[0.01, 0.01], [0.99, 0.99]])
+    c = tf.constant([[0, 0], [0.0, 0]])
+    d = tf.constant([[0, 0], [0.0, 0.1]])
     print('dice_loss:', dice_loss(c, d))
     print('cross_entropy:', cross_entropy(c, d))
     print('combined_loss:',  combined_loss(c, d))
