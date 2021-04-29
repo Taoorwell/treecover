@@ -19,17 +19,18 @@ def parse_fun(x, y):
 
 
 if __name__ == '__main__':
-    path = '../../../treecrown'
-    width = 1000
+    path = '../'
+    width = 333
     batch_size = 1
-    images_path = sorted(glob(os.path.join(path, "tiles/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, "masks/*.tif")))
+    # images_path = sorted(glob(os.path.join(path, "tiles/*.tif")))
+    # masks_path = sorted(glob(os.path.join(path, "masks/*.tif")))
+    images_path, masks_path = load_data(path=path, mode='test')
     datasets = tf.data.Dataset.from_tensor_slices((images_path, masks_path))
     datasets = datasets.map(parse_fun)
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
-    model = build_res_unet((1000, 1000, 7))
-    model.load_weights('checkpoints/ckpt-1')
+    model = build_res_unet((333, 333, 7))
+    model.load_weights('checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_300e')
     for i, (image, mask) in enumerate(datasets):
         mask_pred = model.predict(image)
         acc = dice(mask, mask_pred)
@@ -56,7 +57,7 @@ if __name__ == '__main__':
 
         plt.title('Accuracy:{:.2%}'.format(acc))
         # plt.show()
-        plt.savefig('pre/treecrown/Image_{}_pre_1'.format(image_id))
+        plt.savefig('pre/treecover/Image_{}_pre_4'.format(image_id))
         print('finish: {}'.format(i))
         if i == 34:
             break
