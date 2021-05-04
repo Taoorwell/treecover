@@ -34,11 +34,25 @@ def get_raster(raster_path):
     return data
 
 
+def write_geotiff(name, prediction, original_path):
+    ds = gdal.Open(original_path)
+    geo = ds.GetGeoTransform()
+    proj = ds.GetProjectionRef()
+
+    driver = gdal.GetDriverByName('GTiff')
+    rows, cols = prediction.shape
+    dataset = driver.Create(name, cols, rows, 1, gdal.GDT_Byte)
+    dataset.SetGeoTransform(geo)
+    dataset.SetProjection(proj)
+    band = dataset.GetRasterBand(1)
+    band.WriteArray(prediction)
+
+
 def norma_data(data, norma_methods="z-score"):
     arr = np.empty(data.shape, dtype=np.float32)
     for i in range(data.shape[-1]):
         array = data.transpose(2, 0, 1)[i, :, :]
-        mins, maxs, mean, std= np.percentile(array, 1), np.percentile(array, 99), np.mean(array), np.std(array)
+        mins, maxs, mean, std = np.percentile(array, 1), np.percentile(array, 99), np.mean(array), np.std(array)
         if norma_methods == "z-score":
             new_array = (array-mean)/std
         else:

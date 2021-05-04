@@ -24,13 +24,13 @@ if __name__ == '__main__':
     batch_size = 1
     # images_path = sorted(glob(os.path.join(path, "tiles/*.tif")))
     # masks_path = sorted(glob(os.path.join(path, "masks/*.tif")))
-    images_path, masks_path = load_data(path=path, mode='train')
+    images_path, masks_path = load_data(path=path, mode='test')
     datasets = tf.data.Dataset.from_tensor_slices((images_path, masks_path))
     datasets = datasets.map(parse_fun)
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
     model = build_res_unet((333, 333, 7))
-    model.load_weights('checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_300e')
+    model.load_weights('checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_309')
     for i, (image, mask) in enumerate(datasets):
         mask_pred = model.predict(image)
         acc = Iou(mask, mask_pred)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
         plt.title('Accuracy:{:.2%}'.format(acc))
         # plt.show()
-        plt.savefig('pre/treecover/valid/Image_{}_pre_IOU'.format(image_id))
+        plt.savefig('pre/treecover/Image_{}_pre_5'.format(image_id))
         print('finish: {}'.format(i))
-        if i == 25:
+        if i == 29:
             break
