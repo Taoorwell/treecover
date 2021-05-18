@@ -28,25 +28,25 @@ def image_dataset(path, mode, width, batch_size):
         mask.set_shape(mask.shape)
         return image, mask
     datasets = datasets.map(parse_fun)
-
-    def augment(image_mask, seed):
-        image, mask = image_mask
-        image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
-        mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
-        if np.random.uniform((0)) > 0.5:
-            new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
-            image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
-            mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
-        return image, mask
-
     rng = tf.random.Generator.from_seed(123, alg='philox')
 
-    def f(x, y):
+    def augment(image, mask):
         seed = rng.make_seeds(2)[0]
-        image, label = augment((x, y), seed)
-        return image, label
+        image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
+        mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
+        
+	#if np.random.uniform((0)) > 0.5:
+        #    new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
+        #    image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
+        #    mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
+        return image, mask
 
-    datasets = datasets.map(f, num_parallel_calls=tf.data.AUTOTUNE)
+
+    #def f(x, y):
+    #   image, label = augment((x, y), seed)
+    #    return image, label
+
+    datasets = datasets.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
 
@@ -130,11 +130,11 @@ if __name__ == '__main__':
         def lr_cosine_decay(epoch):
             cosine_decay = 0.5 * (1 + math.cos(math.pi * epoch / epochs))
             return initial_learning_rate * cosine_decay
+        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_279',
                                                            histogram_freq=1)
-    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=1)
 
     model.fit(train_dataset,
               steps_per_epoch=train_steps,
