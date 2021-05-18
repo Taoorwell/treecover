@@ -9,11 +9,14 @@ from residual_unet import *
 
 
 def image_dataset(path, mode, width, batch_size):
+    # image path and mask path dataset
     images_path, masks_path = load_data(path, mode)
     datasets = tf.data.Dataset.from_tensor_slices((images_path, masks_path))
 
     # parse path into full image and then into patches
     # define parse function
+    rng = tf.random.Generator.from_seed(123, alg='philox')
+
     def parse_fun(x, y):
         def f(x, y):
             x1 = x.decode()
@@ -26,37 +29,19 @@ def image_dataset(path, mode, width, batch_size):
         image, mask = tf.numpy_function(f, [x, y], [tf.float32, tf.float32])
         image.set_shape(image.shape)
         mask.set_shape(mask.shape)
-        return image, mask
-    datasets = datasets.map(parse_fun)
-    rng = tf.random.Generator.from_seed(123, alg='philox')
-
-    def augment(image, mask):
         seed = rng.make_seeds(2)[0]
         image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
         mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
-        
-	#if np.random.uniform((0)) > 0.5:
-        #    new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
-        #    image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
-        #    mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
         return image, mask
-
-
-    #def f(x, y):
-    #   image, label = augment((x, y), seed)
-    #    return image, label
-
-    datasets = datasets.map(augment, num_parallel_calls=tf.data.AUTOTUNE)
+    datasets = datasets.map(parse_fun, num_parallel_calls=tf.data.AUTOTUNE)
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
-
     datasets = datasets.prefetch(buffer_size=tf.data.AUTOTUNE)
-
-    options = tf.data.Options()
-    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
-    datasets = datasets.with_options(options)
-
     return datasets
+
+    # options = tf.data.Options()
+    # options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
+    # datasets = datasets.with_options(options)
 
 
 if __name__ == '__main__':
