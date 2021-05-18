@@ -10,16 +10,16 @@ def load_data(path, mode):
     masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
     np.random.seed(seed=1)
     idx = np.random.permutation(np.arange(len(images_path)))
-    test_idx = idx[:29]
+    test_idx = idx[:int(len(images_path) * 0.1)]
     train_valid_idx = [x for x in idx if x not in test_idx]
-    train_idx = train_valid_idx[:250]
-    valid_idx = train_valid_idx[250:]
+    # train_idx = train_valid_idx[:int(len(train_valid_idx) * 0.9)]
+    # valid_idx = train_valid_idx[int(len(train_valid_idx) * 0.9):]
     if mode == 'train':
-        image_path, mask_path = [images_path[x] for x in train_idx], [masks_path[x] for x in train_idx]
-    elif mode == 'valid':
-        image_path, mask_path = [images_path[x] for x in valid_idx], [masks_path[x] for x in valid_idx]
+        image_path, mask_path = [images_path[x] for x in train_valid_idx], [masks_path[x] for x in train_valid_idx]
+    # elif mode == 'valid':
+    #     image_path, mask_path = [images_path[x] for x in valid_idx], [masks_path[x] for x in valid_idx]
     else:
-        image_path, mask_path = [images_path[x] for x in test_idx ], [masks_path[x] for x in test_idx]
+        image_path, mask_path = [images_path[x] for x in test_idx], [masks_path[x] for x in test_idx]
     return image_path, mask_path
 
 

@@ -3,7 +3,7 @@ from residual_unet import *
 from tqdm import tqdm
 
 if __name__ == '__main__':
-    path = r'../large_scale/subplots/'
+    path = r'../large_scale/subplots/2020_m2/2020_m2_1/'
     width = 250
     subplots = sorted(glob(os.path.join(path, "*.tif")))
     model = build_res_unet(input_shape=(width, width, 7))

@@ -60,9 +60,9 @@ def image_dataset(path, mode, width, batch_size):
 
 
 if __name__ == '__main__':
-    width = 256
+    width = 250
     batch_size = 5
-    train_steps = (250 // batch_size) * 6
+    train_steps = (280 // batch_size) * 6
     valid_steps = (30 // batch_size) * 6
     epochs = 100
     # image_path, mask_path = load_data(path='../', mode='test')
@@ -132,7 +132,7 @@ if __name__ == '__main__':
             return initial_learning_rate * cosine_decay
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_309',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_279',
                                                            histogram_freq=1)
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=1)
 
@@ -143,7 +143,7 @@ if __name__ == '__main__':
               validation_steps=valid_steps,
               callbacks=[tensorboard_callbacks, learning_rate_scheduler])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-1m_combined_log_cosine_aug_309')
+    model.save_weights('checkpoints/ckpt-1m_combined_log_cosine_aug_279')
 
 
 
