@@ -3,7 +3,6 @@ from utility import *
 
 
 def image_dataset(path, mode, width, batch_size):
-    # image path and mask path dataset
     images_path, masks_path = load_data(path, mode)
     datasets = tf.data.Dataset.from_tensor_slices((images_path, masks_path))
 
@@ -23,10 +22,17 @@ def image_dataset(path, mode, width, batch_size):
         image, mask = tf.numpy_function(f, [x, y], [tf.float32, tf.float32])
         image.set_shape(image.shape)
         mask.set_shape(mask.shape)
+
         seed = rng.make_seeds(2)[0]
         image = tf.image.stateless_random_crop(image, size=(width, width, 7), seed=seed)
         mask = tf.image.stateless_random_crop(mask, size=(width, width, 1), seed=seed)
+
+        new_seed = tf.random.experimental.stateless_split(seed, num=1)[0, :]
+        image = tf.image.stateless_random_flip_left_right(image, seed=new_seed)
+        mask = tf.image.stateless_random_flip_left_right(mask, seed=new_seed)
+
         return image, mask
+
     datasets = datasets.map(parse_fun, num_parallel_calls=tf.data.AUTOTUNE)
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
@@ -36,12 +42,12 @@ def image_dataset(path, mode, width, batch_size):
 
 if __name__ == '__main__':
     path = '../'
-    mode = 'train'
+    mode = 'test'
     width = 250
     batch_size = 1
     train_dataset = image_dataset(path, mode, width, batch_size)
     for i, (image, mask) in enumerate(train_dataset):
-        if i == 0 or i % 279 == 0:
+        if i == 0 or i % 30 == 0:
             image1, mask1 = image[0], mask[0]
             plt.subplot(1, 2, 1)
             plt.imshow(image1.numpy()[:, :, [4, 3, 2]])

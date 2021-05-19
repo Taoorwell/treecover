@@ -30,7 +30,7 @@ if __name__ == '__main__':
     datasets = datasets.batch(batch_size)
     datasets = datasets.repeat()
     model = build_res_unet((333, 333, 7))
-    model.load_weights('checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_309')
+    model.load_weights('checkpoints/checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_279')
     for i, (image, mask) in enumerate(datasets):
         mask_pred = model.predict(image)
         acc = Iou(mask, mask_pred)
@@ -56,8 +56,8 @@ if __name__ == '__main__':
         plt.yticks([])
 
         plt.title('Accuracy:{:.2%}'.format(acc))
-        # plt.show()
-        plt.savefig('pre/treecover/Image_{}_pre_5'.format(image_id))
+        plt.show()
+        # plt.savefig('pre/treecover/Image_{}_pre_5'.format(image_id))
         print('finish: {}'.format(i))
         if i == 29:
             break
