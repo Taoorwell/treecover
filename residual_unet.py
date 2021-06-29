@@ -1,3 +1,5 @@
+from abc import ABC
+
 import tensorflow as tf
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, BatchNormalization, Activation, add, concatenate
@@ -113,14 +115,4 @@ def combined_log_loss(y_true, y_pred):
     return loss
 
 
-if __name__ == '__main__':
-    c = tf.constant([[0, 0], [0.0, 0]])
-    d = tf.constant([[0, 0], [0.0, 0.1]])
-    print('dice_loss:', dice_loss(c, d))
-    print('cross_entropy:', cross_entropy(c, d))
-    print('combined_loss:',  combined_loss(c, d))
-    print('combined_log_loss:', combined_log_loss(c, d))
-    print('dice_accuracy:', dice(c, d))
-    print('IoU_accuracy:', Iou(c, d))
-    # model = build_res_unet((333, 333, 7))
-    # model.summary()
+

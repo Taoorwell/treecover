@@ -1,5 +1,6 @@
 import tensorflow as tf
-from utility import *
+import os
+from glob import glob
 
 
 def image_dataset(path, mode, width, batch_size):

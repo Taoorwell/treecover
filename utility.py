@@ -5,33 +5,32 @@ from osgeo import gdal
 from matplotlib import pyplot as plt
 
 
-def load_data(path, mode):
-    images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
-    np.random.seed(seed=1)
-    idx = np.random.permutation(np.arange(len(images_path)))
-    test_idx = idx[:int(len(images_path) * 0.1)]
-    train_valid_idx = [x for x in idx if x not in test_idx]
-    # train_idx = train_valid_idx[:int(len(train_valid_idx) * 0.9)]
-    # valid_idx = train_valid_idx[int(len(train_valid_idx) * 0.9):]
-    if mode == 'train':
-        image_path, mask_path = [images_path[x] for x in train_valid_idx], [masks_path[x] for x in train_valid_idx]
-    # elif mode == 'valid':
-    #     image_path, mask_path = [images_path[x] for x in valid_idx], [masks_path[x] for x in valid_idx]
-    else:
-        image_path, mask_path = [images_path[x] for x in test_idx], [masks_path[x] for x in test_idx]
-    return image_path, mask_path
+# def load_data(path, mode):
+#     images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
+#     masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
+#     np.random.seed(1)
+#     idx = np.random.permutation(np.arange(len(images_path)))
+#     test_idx = idx[:int(len(images_path) * 0.1)]
+#     train_valid_idx = [x for x in idx if x not in test_idx]
+#     # train_idx = train_valid_idx[:int(len(train_valid_idx) * 0.9)]
+#     # valid_idx = train_valid_idx[int(len(train_valid_idx) * 0.9):]
+#     if mode == 'train':
+#         image_path, mask_path = [images_path[x] for x in train_valid_idx], [masks_path[x] for x in train_valid_idx]
+#     # elif mode == 'valid':
+#     #     image_path, mask_path = [images_path[x] for x in valid_idx], [masks_path[x] for x in valid_idx]
+#     else:
+#         image_path, mask_path = [images_path[x] for x in test_idx], [masks_path[x] for x in test_idx]
+#     return image_path, mask_path
 
-
-def get_raster(raster_path):
+def get_image(raster_path):
     ds = gdal.Open(raster_path)
-    data = np.empty((ds.RasterYSize, ds.RasterXSize, ds.RasterCount), dtype=np.float32)
+    image = np.empty((ds.RasterYSize, ds.RasterXSize, ds.RasterCount), dtype=np.float32)
     for b in range(1, ds.RasterCount + 1):
         band = ds.GetRasterBand(b).ReadAsArray()
-        data[:, :, b-1] = band
-    if data.shape[-1] > 1:
-        data = norma_data(data, norma_methods='min-max')
-    return data
+        image[:, :, b-1] = band
+    if image.shape[-1] > 1:
+        image = norma_data(image, norma_methods='min-max')
+    return image
 
 
 def write_geotiff(name, prediction, original_path):
@@ -51,12 +50,12 @@ def write_geotiff(name, prediction, original_path):
 def norma_data(data, norma_methods="z-score"):
     arr = np.empty(data.shape, dtype=np.float32)
     for i in range(data.shape[-1]):
-        array = data.transpose(2, 0, 1)[i, :, :]
-        mins, maxs, mean, std = np.percentile(array, 1), np.percentile(array, 99), np.mean(array), np.std(array)
+        array = data[:, :, i]
+        mi, ma, mean, std = np.percentile(array, 1), np.percentile(array, 99), array.mean(), array.std()
         if norma_methods == "z-score":
             new_array = (array-mean)/std
         else:
-            new_array = np.clip(2*(array-mins)/(maxs-mins), 0, 1)
+            new_array = (2*(array-mi)/(ma-mi)).clip(0, 1)
         arr[:, :, i] = new_array
     return arr
 
@@ -88,6 +87,6 @@ palette = {0: (255, 255, 255),  # White
            15: (165, 42, 42),
            16: (175, 238, 238)}
 
-# if __name__ == '__main__':
-#     image_path, mask_path = load_data(path='../', mode='train')
-#     print(len(image_path))
+if __name__ == '__main__':
+    image_path, mask_path = load_data(path='../', mode='train')
+    print(len(image_path))
