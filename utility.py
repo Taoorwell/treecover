@@ -1,5 +1,3 @@
-import os
-from glob import glob
 import numpy as np
 from osgeo import gdal
 from matplotlib import pyplot as plt
@@ -87,6 +85,6 @@ palette = {0: (255, 255, 255),  # White
            15: (165, 42, 42),
            16: (175, 238, 238)}
 
-if __name__ == '__main__':
-    image_path, mask_path = load_data(path='../', mode='train')
-    print(len(image_path))
+# if __name__ == '__main__':
+#     image_path, mask_path = load_data(path='../', mode='train')
+#     print(len(image_path))

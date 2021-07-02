@@ -1,5 +1,3 @@
-from abc import ABC
-
 import tensorflow as tf
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, BatchNormalization, Activation, add, concatenate
