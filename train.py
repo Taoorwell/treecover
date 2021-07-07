@@ -2,6 +2,7 @@ import math
 import tensorflow as tf
 from residual_unet import build_res_unet, combined_log_loss, dice
 from dataloder import Dataloader
+from tqdm import tqdm
 # Datasets construction
 # def image_dataset(path, mode, width, batch_size):
 #     # image path and mask path dataset
@@ -50,35 +51,50 @@ if __name__ == '__main__':
     width = 256
     batch_size = 2
     epochs = 10
-
+    initial_learning_rate = 0.0001
     # train dataloader
     train_dataloader = Dataloader(path='../', mode='train', image_shape=(width, width, 7))
+    valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7))
 
     # model compile
-    strategy = tf.distribute.MirroredStrategy()
-    with strategy.scope():
-        model = build_res_unet(input_shape=(width, width, 7))
+    # strategy = tf.distribute.MirroredStrategy()
+    # with strategy.scope():
+    model = build_res_unet(input_shape=(width, width, 7))
+    # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
+    # model.compile(optimizer=tf.optimizers.Adam(learning_rate=initial_learning_rate),
+    #               loss=combined_log_loss, metrics=[dice])
 
-        initial_learning_rate = 0.0001
+    def lr_exponential_decay(e):
+        # something happen
+        decay_rate = 0.04
+        return initial_learning_rate * math.pow(decay_rate, e / epochs)
 
-        model.compile(optimizer=tf.optimizers.Adam(learning_rate=initial_learning_rate),
-                      loss=combined_log_loss, metrics=[dice])
-
-        def lr_exponential_decay(e):
-            # something happen
-            decay_rate = 0.04
-            return initial_learning_rate * math.pow(decay_rate, e / epochs)
-
-        def lr_cosine_decay(e):
-            cosine_decay = 0.5 * (1 + math.cos(math.pi * e / epochs))
-            return initial_learning_rate * cosine_decay
-        # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+    def lr_cosine_decay(e):
+        cosine_decay = 0.5 * (1 + math.cos(math.pi * e / epochs))
+        return initial_learning_rate * cosine_decay
+    # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
     for epoch in range(epochs):
-        for batch_image, batch_mask in train_dataloader.load_batch(batch_size=batch_size):
-            train_loss, train_acc = model.train_on_batch(batch_image, batch_mask)
-            print(train_loss, train_acc)
-        break
+        train_acc, train_loss, valid_acc = [], [], []
+        optimizer = tf.optimizers.Adam(learning_rate=lr_cosine_decay(epoch))
+        for step, (batch_image, batch_mask) in tqdm(enumerate(train_dataloader.load_batch(batch_size=batch_size))):
+            with tf.GradientTape() as tape:
+                logits = model(batch_image, training=True)
+                loss_value = combined_log_loss(batch_mask, logits)
+            # gradients and optimizer
+            grads = tape.gradient(loss_value, model.trainable_weights)
+            optimizer.apply_gradients(zip(grads, model.trainable_weights))
+            # train accuracy
+            train_acc.append(dice(batch_mask, logits))
+            train_loss.append(loss_value)
+
+        for batch_image_valid, batch_mask_valid in valid_dataloader.load_batch(batch_size=batch_size):
+            val_logits = model(batch_image_valid, training=False)
+            valid_acc.append(dice(batch_mask_valid, val_logits))
+        print('Epoch:{}, train acc:{}, train loss:{}, valid acc:{}'.format(epoch+1,
+                                                                           tf.reduce_mean(train_acc),
+                                                                           tf.reduce_mean(train_loss),
+                                                                           tf.reduce_mean(valid_acc)))
 
     # tensorboard
     # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_279',
