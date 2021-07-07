@@ -49,9 +49,9 @@ from tqdm import tqdm
 if __name__ == '__main__':
     # some parameters
     width = 256
-    batch_size = 2
+    batch_size = 5
     epochs = 10
-    initial_learning_rate = 0.0001
+    initial_learning_rate = 0.001
     # train dataloader
     train_dataloader = Dataloader(path='../', mode='train', image_shape=(width, width, 7))
     valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7))
