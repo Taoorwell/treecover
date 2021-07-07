@@ -49,7 +49,7 @@ from tqdm import tqdm
 if __name__ == '__main__':
     # some parameters
     width = 256
-    batch_size = 5
+    batch_size = 2
     epochs = 10
     initial_learning_rate = 0.001
     # train dataloader

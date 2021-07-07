@@ -1,6 +1,6 @@
 import numpy as np
 from osgeo import gdal
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 
 # def load_data(path, mode):
@@ -58,13 +58,13 @@ def norma_data(data, norma_methods="z-score"):
     return arr
 
 
-def plot_mask(result):
-    arr_2d = result
-    arr_3d = np.zeros((arr_2d.shape[0], arr_2d.shape[1], 3), dtype=np.uint8)
-    for c, i in palette.items():
-        m = arr_2d == c
-        arr_3d[m] = i
-    plt.imshow(arr_3d)
+# def plot_mask(result):
+#     arr_2d = result
+#     arr_3d = np.zeros((arr_2d.shape[0], arr_2d.shape[1], 3), dtype=np.uint8)
+#     for c, i in palette.items():
+#         m = arr_2d == c
+#         arr_3d[m] = i
+#     plt.imshow(arr_3d)
 
 
 palette = {0: (255, 255, 255),  # White
