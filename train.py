@@ -57,44 +57,54 @@ if __name__ == '__main__':
     valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7))
 
     # model compile
-    # strategy = tf.distribute.MirroredStrategy()
-    # with strategy.scope():
-    model = build_res_unet(input_shape=(width, width, 7))
-    # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+        model = build_res_unet(input_shape=(width, width, 7))
+        optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
     # model.compile(optimizer=tf.optimizers.Adam(learning_rate=initial_learning_rate),
     #               loss=combined_log_loss, metrics=[dice])
 
-    def lr_exponential_decay(e):
-        # something happen
-        decay_rate = 0.04
-        return initial_learning_rate * math.pow(decay_rate, e / epochs)
-
-    def lr_cosine_decay(e):
-        cosine_decay = 0.5 * (1 + math.cos(math.pi * e / epochs))
-        return initial_learning_rate * cosine_decay
+    # def lr_exponential_decay(e):
+    #     # something happen
+    #     decay_rate = 0.04
+    #     return initial_learning_rate * math.pow(decay_rate, e / epochs)
+    #
+    # def lr_cosine_decay(e):
+    #     cosine_decay = 0.5 * (1 + math.cos(math.pi * e / epochs))
+    #     return initial_learning_rate * cosine_decay
     # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+    dist_train_dataloader = strategy.make_dataset_iterator(train_dataloader.load_batch(batch_size))
+
+    def train_step(batch):
+        x, y = batch
+        with tf.GradientTape() as tape:
+            logits = model(x, training=True)
+            loss_value = tf.reduce_sum(combined_log_loss(y, logits)) / batch_size
+        # gradients and optimizer
+        grads = tape.gradient(loss_value, model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        return loss_value
 
     for epoch in range(epochs):
         train_acc, train_loss, valid_acc = [], [], []
-        optimizer = tf.optimizers.Adam(learning_rate=lr_cosine_decay(epoch))
-        for step, (batch_image, batch_mask) in tqdm(enumerate(train_dataloader.load_batch(batch_size=batch_size))):
-            with tf.GradientTape() as tape:
-                logits = model(batch_image, training=True)
-                loss_value = combined_log_loss(batch_mask, logits)
-            # gradients and optimizer
-            grads = tape.gradient(loss_value, model.trainable_weights)
-            optimizer.apply_gradients(zip(grads, model.trainable_weights))
-            # train accuracy
-            train_acc.append(dice(batch_mask, logits))
-            train_loss.append(loss_value)
+        # optimizer = tf.optimizers.Adam(learning_rate=lr_cosine_decay(epoch))
+        for batch_image, batch_mask in tqdm(dist_train_dataloader):
+            per_replica_loss = strategy.run(train_step, args=(batch_image, batch_mask))
+            batch_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None)
+        # train accuracy
+        # train_acc.append(dice(batch_mask, logits))
+        # train_loss.append(loss_value)
+        # print(loss_value, train_acc)
+        break
 
-        for batch_image_valid, batch_mask_valid in valid_dataloader.load_batch(batch_size=batch_size):
-            val_logits = model(batch_image_valid, training=False)
-            valid_acc.append(dice(batch_mask_valid, val_logits))
-        print('Epoch:{}, train acc:{}, train loss:{}, valid acc:{}'.format(epoch+1,
-                                                                           tf.reduce_mean(train_acc),
-                                                                           tf.reduce_mean(train_loss),
-                                                                           tf.reduce_mean(valid_acc)))
+        # validation datasets
+        # for batch_image_valid, batch_mask_valid in valid_dataloader.load_batch(batch_size=batch_size):
+        #     val_logits = model(batch_image_valid, training=False)
+        #     valid_acc.append(dice(batch_mask_valid, val_logits))
+        # print('Epoch:{}, train acc:{}, train loss:{}, valid acc:{}'.format(epoch+1,
+        #                                                                    tf.reduce_mean(train_acc),
+        #                                                                    tf.reduce_mean(train_loss),
+        #                                                                    tf.reduce_mean(valid_acc)))
 
     # tensorboard
     # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_279',

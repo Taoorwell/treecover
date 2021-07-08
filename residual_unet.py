@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, BatchNormalization, Activation, add, concatenate
@@ -78,39 +79,47 @@ def build_res_unet(input_shape):
 
 
 def Iou(y_true, y_pred):
-    numerator = tf.reduce_sum(y_true * y_pred)
-    denominator = tf.reduce_sum(y_true + y_pred)
+    numerator = tf.reduce_sum(y_true * y_pred, [1, 2])
+    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
     return numerator / (denominator - numerator)
 
 
 def dice(y_true, y_pred):
-    numerator = 2 * tf.reduce_sum(y_true * y_pred)
-    denominator = tf.reduce_sum(y_true + y_pred)
+    numerator = 2 * tf.reduce_sum(y_true * y_pred, [1, 2])
+    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
     return numerator / denominator
 
 
 def dice_loss(y_true, y_pred):
-    numerator = 2 * tf.reduce_sum(y_true * y_pred)
-    denominator = tf.reduce_sum(y_true + y_pred)
+    numerator = 2 * tf.reduce_sum(y_true * y_pred, [1, 2])
+    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
     return 1 - (numerator / denominator)
 
 
 def cross_entropy(y_true, y_pred):
-    loss = tf.keras.losses.binary_crossentropy(y_true, y_pred)
-    return tf.reduce_mean(loss)
+    bce = tf.keras.losses.BinaryCrossentropy(from_logits=False,
+                                             reduction=tf.keras.losses.Reduction.NONE)
+    loss = bce(y_true, y_pred)
+    return tf.reduce_mean(loss, 1)
 
 
 def combined_loss(y_true, y_pred):
-    y_true = tf.cast(y_true, tf.float32)
+    # y_true = tf.cast(y_true, tf.float32)
     loss = cross_entropy(y_true, y_pred) + dice_loss(y_true, y_pred)
     return loss
 
 
 def combined_log_loss(y_true, y_pred):
     eps = 1E-15
-    y_true = tf.cast(y_true, tf.float32)
+    # y_true = tf.cast(y_true, tf.float32)
     loss = cross_entropy(y_true, y_pred) - tf.math.log(Iou(y_true, y_pred) + eps)
     return loss
 
+
+if __name__ == '__main__':
+    a = np.random.random(100).reshape(4, 5, 5)
+    b = np.random.random(100).reshape(4, 5, 5)
+    loss = combined_log_loss(a, b)
+    print(loss)
 
 
