@@ -15,8 +15,8 @@ class Dataloader:
     @property
     def load_path(self):
         # train, valid, test: 235, 29, 30
-        images_path = glob(os.path.join(self.path, "tiles_north/*.tif"))
-        masks_path = glob(os.path.join(self.path, "masks_north/*.tif"))
+        images_path = sorted(glob(os.path.join(self.path, "tiles_north/*.tif")))
+        masks_path = sorted(glob(os.path.join(self.path, "masks_north/*.tif")))
         length = len(images_path)
         np.random.seed(1)
         idx = np.random.permutation(length)
