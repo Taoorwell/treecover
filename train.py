@@ -1,7 +1,7 @@
-import math
+# import math
 import tensorflow as tf
-from residual_unet import build_res_unet, combined_log_loss, dice
-from dataloder import Dataloader
+from residual_unet import build_res_unet, combined_log_loss
+from dataloder import dataset
 from tqdm import tqdm
 # Datasets construction
 # def image_dataset(path, mode, width, batch_size):
@@ -53,9 +53,10 @@ if __name__ == '__main__':
     epochs = 10
     initial_learning_rate = 0.001
     # train dataloader
-    train_dataloader = Dataloader(path='../', mode='train', image_shape=(width, width, 7))
-    valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7))
-
+    # train_dataloader = Dataloader(path='../', mode='train', image_shape=(width, width, 7), batch_size=batch_size)
+    # valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7), batch_size=batch_size)
+    train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
+    valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
     # model compile
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
@@ -73,10 +74,9 @@ if __name__ == '__main__':
     #     cosine_decay = 0.5 * (1 + math.cos(math.pi * e / epochs))
     #     return initial_learning_rate * cosine_decay
     # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-    dist_train_dataloader = strategy.make_dataset_iterator(train_dataloader.load_batch(batch_size))
+    dist_train_datasets = strategy.experimental_distribute_dataset(train_datasets)
 
-    def train_step(batch):
-        x, y = batch
+    def train_step(x, y):
         with tf.GradientTape() as tape:
             logits = model(x, training=True)
             loss_value = tf.reduce_sum(combined_log_loss(y, logits)) / batch_size
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         train_acc, train_loss, valid_acc = [], [], []
         # optimizer = tf.optimizers.Adam(learning_rate=lr_cosine_decay(epoch))
-        for batch_image, batch_mask in tqdm(dist_train_dataloader):
+        for batch_image, batch_mask in tqdm(dist_train_datasets):
             per_replica_loss = strategy.run(train_step, args=(batch_image, batch_mask))
             batch_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None)
         # train accuracy
