@@ -4,7 +4,7 @@ from glob import glob
 import os
 from utility import get_image
 import tensorflow as tf
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 
 class Dataloader(tf.keras.utils.Sequence):
@@ -144,14 +144,14 @@ def dataset(path, mode, image_shape, batch_size):
 
 
 if __name__ == '__main__':
-    valid_datasets = dataset(path='../', mode='valid', image_shape=(256, 256), batch_size=10)
-    # for b_image, b_mask in valid_datasets:
-    #     b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
-    #     plt.subplot(1, 2, 1)
-    #     plt.imshow(b_im)
-    #     plt.subplot(1, 2, 2)
-    #     plt.imshow(b_ms)
-    #     plt.show()
+    valid_datasets = dataset(path='../', mode='train', image_shape=(256, 256), batch_size=10)
+    for b_image, b_mask in valid_datasets:
+        b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
+        plt.subplot(1, 2, 1)
+        plt.imshow(b_im)
+        plt.subplot(1, 2, 2)
+        plt.imshow(b_ms)
+        plt.show()
 
     # dataloader = Dataloader(path='../', mode='valid', image_shape=(256, 256), batch_size=10)
     # for i, j in dataloader:

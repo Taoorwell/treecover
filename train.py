@@ -1,6 +1,6 @@
 # import math
 import tensorflow as tf
-from residual_unet import build_res_unet, combined_log_loss
+from residual_unet import build_res_unet, combined_log_loss, dice_loss, cross_entropy, iou
 from dataloder import dataset
 from tqdm import tqdm
 # Datasets construction
@@ -49,9 +49,9 @@ from tqdm import tqdm
 if __name__ == '__main__':
     # some parameters
     width = 256
-    batch_size = 2
+    batch_size = 5
     epochs = 10
-    initial_learning_rate = 0.001
+    initial_learning_rate = 0.0001
     # train dataloader
     # train_dataloader = Dataloader(path='../', mode='train', image_shape=(width, width, 7), batch_size=batch_size)
     # valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7), batch_size=batch_size)
@@ -75,35 +75,53 @@ if __name__ == '__main__':
     #     return initial_learning_rate * cosine_decay
     # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     dist_train_datasets = strategy.experimental_distribute_dataset(train_datasets)
+    dist_valid_datasets = strategy.experimental_distribute_dataset(valid_datasets)
 
     # @tf.function
     def train_step(x, y):
         with tf.GradientTape() as tape:
             logits = model(x, training=True)
-            loss_value = tf.reduce_sum(combined_log_loss(y, logits)) / batch_size
+            loss = dice_loss(y, logits)
+            loss_value = tf.nn.compute_average_loss(loss, global_batch_size=batch_size)
         # gradients and optimizer
         grads = tape.gradient(loss_value, model.trainable_weights)
         optimizer.apply_gradients(zip(grads, model.trainable_weights))
-        return loss_value
+        train_acc = tf.reduce_mean(iou(y, logits))
+        return loss_value, train_acc
+
+    def valid_step(x, y):
+        predictions = model(x, training=False)
+        valid_loss = tf.reduce_mean(dice_loss(y, predictions))
+        valid_acc = tf.reduce_mean(iou(y, predictions))
+        return valid_loss, valid_acc
 
     @tf.function
     def dist_train_step(x, y):
-        per_replica_loss = strategy.run(train_step, args=(x, y))
-        batch_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None)
-        return batch_loss
+        per_replica_loss, _ = strategy.run(train_step, args=(x, y))
+        return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None), _
+
+    @tf.function
+    def dist_valid_step(x, y):
+        return strategy.run(valid_step, args=(x, y))
+
     for epoch in range(epochs):
-        # train_acc, train_loss, valid_acc = [], [], []
+        train_acc, train_loss, valid_loss, valid_acc = [], [], [], []
         # optimizer = tf.optimizers.Adam(learning_rate=lr_cosine_decay(epoch))
         for batch_image, batch_mask in tqdm(dist_train_datasets):
-            batch_loss = dist_train_step(batch_image, batch_mask)
-            print('Batch loss: ', batch_loss)
-
-        # train accuracy
-        # train_acc.append(dice(batch_mask, logits))
-        # train_loss.append(loss_value)
-        # print(loss_value, train_acc)
-        break
-
+            batch_loss, _ = dist_train_step(batch_image, batch_mask)
+            train_loss.append(batch_loss)
+            train_acc.append(_)
+            # print('train loss: {}, train acc:{}'.format(batch_loss, _))
+        for v_batch_image, v_batch_mask in tqdm(dist_valid_datasets):
+            valid_los, valid_ac = dist_valid_step(v_batch_image, v_batch_mask)
+            valid_loss.append(valid_los)
+            valid_acc.append(valid_ac)
+            # print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
+        print('Epoch: {}, Train loss:{}, acc:{}, Valid loss:{}, acc:{}'.format(epoch+1,
+                                                                               tf.reduce_mean(train_loss),
+                                                                               tf.reduce_mean(train_acc),
+                                                                               tf.reduce_mean(valid_loss),
+                                                                               tf.reduce_mean(valid_acc)))
         # validation datasets
         # for batch_image_valid, batch_mask_valid in valid_dataloader.load_batch(batch_size=batch_size):
         #     val_logits = model(batch_image_valid, training=False)

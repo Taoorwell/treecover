@@ -78,10 +78,22 @@ def build_res_unet(input_shape):
     return Model(inputs=inputs, outputs=path)
 
 
-def Iou(y_true, y_pred):
+def iou(y_true, y_pred):
     numerator = tf.reduce_sum(y_true * y_pred, [1, 2])
     denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
     return numerator / (denominator - numerator)
+
+# class Iou(tf.keras.metrics):
+#     def __init__(self, y_true, y_pred, axis):
+#         super(Iou, self).__init__()
+#         self.y_true = y_true
+#         self.y_pred = y_pred
+#         self.axis = axis
+#
+#     def __call__(self):
+#         numerator = tf.reduce_sum(self.y_true * self.y_pred, self.axis)
+#         denominator = tf.reduce_sum(self.y_true + self.y_pred, self.axis)
+#         return numerator / (denominator - numerator)
 
 
 def dice(y_true, y_pred):
@@ -97,7 +109,7 @@ def dice_loss(y_true, y_pred):
 
 
 def cross_entropy(y_true, y_pred):
-    bce = tf.keras.losses.BinaryCrossentropy(from_logits=False,
+    bce = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                              reduction=tf.keras.losses.Reduction.NONE)
     loss = bce(y_true, y_pred)
     return tf.reduce_mean(loss, 1)
@@ -110,16 +122,19 @@ def combined_loss(y_true, y_pred):
 
 
 def combined_log_loss(y_true, y_pred):
-    eps = 1E-15
+    eps = 1E-10
     # y_true = tf.cast(y_true, tf.float32)
-    loss = cross_entropy(y_true, y_pred) - tf.math.log(Iou(y_true, y_pred) + eps)
+    loss = cross_entropy(y_true, y_pred) - tf.math.log(iou(y_true, y_pred) + eps)
     return loss
 
 
 if __name__ == '__main__':
-    a = np.random.random(100).reshape(4, 5, 5)
-    b = np.random.random(100).reshape(4, 5, 5)
-    loss = combined_log_loss(a, b)
-    print(loss)
+    a = np.random.random(10000).reshape(4, 50, 50)
+    b = np.random.random(10000).reshape(4, 50, 50)
+    iou = iou(a, b)
+    # loss_value = tf.nn.compute_average_loss(loss, global_batch_size=4)
+    # loss1 = dice_loss(a, b)
+    # loss2 = combined_log_loss(a, b)
+    print(iou)
 
 
