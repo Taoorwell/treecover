@@ -118,6 +118,7 @@ def dataset(path, mode, image_shape, batch_size):
         y3.set_shape((333, 333, 1))
         return x3, y3
 
+    @tf.autograph.experimental.do_not_convert
     def augment_function(x, y):
         def augment(x, y):
             aug = a.Compose([a.RandomCrop(height=image_shape[0],
@@ -155,6 +156,6 @@ if __name__ == '__main__':
     # dataloader = Dataloader(path='../', mode='valid', image_shape=(256, 256), batch_size=10)
     # for i, j in dataloader:
     #     print(i.shape, j.shape)
-    strategy = tf.distribute.MirroredStrategy()
-    dist_train_dataloader = strategy.experimental_distribute_dataset(valid_datasets)
+    # strategy = tf.distribute.MirroredStrategy()
+    # dist_train_dataloader = strategy.experimental_distribute_dataset(valid_datasets)
 

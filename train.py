@@ -76,21 +76,28 @@ if __name__ == '__main__':
     # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     dist_train_datasets = strategy.experimental_distribute_dataset(train_datasets)
 
+    # @tf.function
     def train_step(x, y):
         with tf.GradientTape() as tape:
             logits = model(x, training=True)
             loss_value = tf.reduce_sum(combined_log_loss(y, logits)) / batch_size
         # gradients and optimizer
-        grads = tape.gradient(loss_value, model.trainable_variables)
-        optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        grads = tape.gradient(loss_value, model.trainable_weights)
+        optimizer.apply_gradients(zip(grads, model.trainable_weights))
         return loss_value
 
+    @tf.function
+    def dist_train_step(x, y):
+        per_replica_loss = strategy.run(train_step, args=(x, y))
+        batch_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None)
+        return batch_loss
     for epoch in range(epochs):
-        train_acc, train_loss, valid_acc = [], [], []
+        # train_acc, train_loss, valid_acc = [], [], []
         # optimizer = tf.optimizers.Adam(learning_rate=lr_cosine_decay(epoch))
         for batch_image, batch_mask in tqdm(dist_train_datasets):
-            per_replica_loss = strategy.run(train_step, args=(batch_image, batch_mask))
-            batch_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None)
+            batch_loss = dist_train_step(batch_image, batch_mask)
+            print('Batch loss: ', batch_loss)
+
         # train accuracy
         # train_acc.append(dice(batch_mask, logits))
         # train_loss.append(loss_value)
