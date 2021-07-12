@@ -139,7 +139,7 @@ def dataset(path, mode, image_shape, batch_size):
     if mode != 'test':
         datasets = datasets.map(augment_function)
     datasets = datasets.batch(batch_size)
-    datasets = datasets.repeat()
+    # datasets = datasets.repeat()
     return datasets
 
 
