@@ -111,12 +111,12 @@ if __name__ == '__main__':
             batch_loss, _ = dist_train_step(batch_image, batch_mask)
             train_loss.append(batch_loss)
             train_acc.append(_)
-            # print('train loss: {}, train acc:{}'.format(batch_loss, _))
+            print('train loss: {}, train acc:{}'.format(batch_loss, _))
         for v_batch_image, v_batch_mask in tqdm(dist_valid_datasets):
             valid_los, valid_ac = dist_valid_step(v_batch_image, v_batch_mask)
             valid_loss.append(valid_los)
             valid_acc.append(valid_ac)
-            # print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
+            print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
         print('Epoch: {}, Train loss:{}, acc:{}, Valid loss:{}, acc:{}'.format(epoch+1,
                                                                                tf.reduce_mean(train_loss),
                                                                                tf.reduce_mean(train_acc),
