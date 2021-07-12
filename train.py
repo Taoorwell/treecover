@@ -99,14 +99,14 @@ if __name__ == '__main__':
     def dist_train_step(x, y):
         per_replica_loss, _ = strategy.run(train_step, args=(x, y))
         loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_loss, axis=None)
-        acc = strategy.reduce(tf.distribute.ReduceOp.SUM, _, axis=None)
+        acc = strategy.reduce(tf.distribute.ReduceOp.MEAN, _, axis=None)
         return loss, acc
 
     @tf.function
     def dist_valid_step(x, y):
         loss, acc = strategy.run(valid_step, args=(x, y))
         loss = strategy.reduce(tf.distribute.ReduceOp.SUM, loss, axis=None)
-        acc = strategy.reduce(tf.distribute.ReduceOp.SUM, acc, axis=None)
+        acc = strategy.reduce(tf.distribute.ReduceOp.MEAN, acc, axis=None)
         return loss, acc
 
     for epoch in range(epochs):
