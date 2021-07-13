@@ -1,24 +1,29 @@
+import os
 import numpy as np
 from osgeo import gdal
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
+from glob import glob
+import scipy.io as sio
 
 
-# def load_data(path, mode):
-#     images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
-#     masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
-#     np.random.seed(1)
-#     idx = np.random.permutation(np.arange(len(images_path)))
-#     test_idx = idx[:int(len(images_path) * 0.1)]
-#     train_valid_idx = [x for x in idx if x not in test_idx]
-#     # train_idx = train_valid_idx[:int(len(train_valid_idx) * 0.9)]
-#     # valid_idx = train_valid_idx[int(len(train_valid_idx) * 0.9):]
-#     if mode == 'train':
-#         image_path, mask_path = [images_path[x] for x in train_valid_idx], [masks_path[x] for x in train_valid_idx]
-#     # elif mode == 'valid':
-#     #     image_path, mask_path = [images_path[x] for x in valid_idx], [masks_path[x] for x in valid_idx]
-#     else:
-#         image_path, mask_path = [images_path[x] for x in test_idx], [masks_path[x] for x in test_idx]
-#     return image_path, mask_path
+def load_path(path, mode):
+    # train, valid, test: 235, 29, 30
+    images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
+    masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
+    length = len(images_path)
+    np.random.seed(1)
+    idx = np.random.permutation(length)
+    if mode == 'train':
+        idx = idx[:int(0.8 * length)]
+    elif mode == 'valid':
+        idx = idx[int(0.8 * length):int(0.9 * length)]
+    else:
+        idx = idx[int(0.9 * length):]
+
+    image_path = [images_path[i] for i in idx]
+    mask_path = [masks_path[i] for i in idx]
+    return image_path, mask_path
+
 
 def get_image(raster_path):
     ds = gdal.Open(raster_path)
@@ -58,13 +63,24 @@ def norma_data(data, norma_methods="z-score"):
     return arr
 
 
-# def plot_mask(result):
-#     arr_2d = result
-#     arr_3d = np.zeros((arr_2d.shape[0], arr_2d.shape[1], 3), dtype=np.uint8)
-#     for c, i in palette.items():
-#         m = arr_2d == c
-#         arr_3d[m] = i
-#     plt.imshow(arr_3d)
+def plot_mask(result):
+    arr_2d = result
+    arr_3d = np.zeros((arr_2d.shape[0], arr_2d.shape[1], 3), dtype=np.uint8)
+    for c, i in palette.items():
+        m = arr_2d == c
+        arr_3d[m] = i
+    plt.imshow(arr_3d)
+
+
+def get_mat_info(mat_data_path):
+    bands_data_dict = sio.loadmat(mat_data_path)
+    bands_data = bands_data_dict[list(bands_data_dict.keys())[-1]]
+    return bands_data
+
+
+def save_array_to_mat(array, filename):
+    dict = {"pre": array}
+    sio.savemat(filename, dict)
 
 
 palette = {0: (255, 255, 255),  # White

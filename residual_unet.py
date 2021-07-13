@@ -81,7 +81,8 @@ def build_res_unet(input_shape):
 def iou(y_true, y_pred):
     numerator = tf.reduce_sum(y_true * y_pred, [1, 2])
     denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
-    return numerator / (denominator - numerator)
+    acc = numerator / (denominator - numerator)
+    return acc
 
 # class Iou(tf.keras.metrics):
 #     def __init__(self, y_true, y_pred, axis):
@@ -112,7 +113,10 @@ def cross_entropy(y_true, y_pred):
     bce = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                              reduction=tf.keras.losses.Reduction.NONE)
     loss = bce(y_true, y_pred)
-    return tf.reduce_mean(loss, 1)
+    # (batch, width, width), (4, 50, 50)
+    loss = tf.reduce_mean(loss, [1, 2])
+    loss = tf.expand_dims(loss, 1)
+    return loss
 
 
 def combined_loss(y_true, y_pred):
@@ -129,12 +133,19 @@ def combined_log_loss(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    a = np.random.random(10000).reshape(4, 50, 50)
-    b = np.random.random(10000).reshape(4, 50, 50)
-    iou = iou(a, b)
+    a = np.random.random(10000).reshape(4, 50, 50, 1)
+    b = np.random.random(10000).reshape(4, 50, 50, 1)
+    # iou = iou(a, b)
+    # print(iou)
+
+    ce = cross_entropy(a, b)
+    print(ce)
+
+    cb = combined_log_loss(a, b)
+    print(cb)
     # loss_value = tf.nn.compute_average_loss(loss, global_batch_size=4)
     # loss1 = dice_loss(a, b)
     # loss2 = combined_log_loss(a, b)
-    print(iou)
+
 
 
