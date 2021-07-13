@@ -49,9 +49,9 @@ from tqdm import tqdm
 if __name__ == '__main__':
     # some parameters
     width = 256
-    batch_size = 5
-    epochs = 10
-    initial_learning_rate = 0.0001
+    batch_size = 8
+    epochs = 50
+    initial_learning_rate = 0.001
     # train dataloader
     # train_dataloader = Dataloader(path='../', mode='train', image_shape=(width, width, 7), batch_size=batch_size)
     # valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7), batch_size=batch_size)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     def train_step(x, y):
         with tf.GradientTape() as tape:
             logits = model(x, training=True)
-            loss = dice_loss(y, logits)
+            loss = combined_log_loss(y, logits)
             loss_value = tf.nn.compute_average_loss(loss, global_batch_size=batch_size)
         # gradients and optimizer
         grads = tape.gradient(loss_value, model.trainable_weights)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     def valid_step(x, y):
         predictions = model(x, training=False)
-        valid_loss = tf.reduce_mean(dice_loss(y, predictions))
+        valid_loss = tf.reduce_mean(combined_log_loss(y, predictions))
         valid_acc = tf.reduce_mean(iou(y, predictions))
         return valid_loss, valid_acc
 
@@ -116,12 +116,12 @@ if __name__ == '__main__':
             batch_loss, _ = dist_train_step(batch_image, batch_mask)
             train_loss.append(batch_loss)
             train_acc.append(_)
-            print('train loss: {}, train acc:{}'.format(batch_loss, _))
+            # print('train loss: {}, train acc:{}'.format(batch_loss, _))
         for v_batch_image, v_batch_mask in tqdm(dist_valid_datasets):
             valid_los, valid_ac = dist_valid_step(v_batch_image, v_batch_mask)
             valid_loss.append(valid_los)
             valid_acc.append(valid_ac)
-            print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
+            # print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
         print('Epoch: {}, Train loss:{}, acc:{}, Valid loss:{}, acc:{}'.format(epoch+1,
                                                                                tf.reduce_mean(train_loss),
                                                                                tf.reduce_mean(train_acc),
