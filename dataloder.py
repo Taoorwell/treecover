@@ -4,7 +4,8 @@ from glob import glob
 import os
 from utility import get_image
 import tensorflow as tf
-from matplotlib import pyplot as plt
+import time
+# from matplotlib import pyplot as plt
 
 
 class Dataloader(tf.keras.utils.Sequence):
@@ -87,7 +88,7 @@ class Dataloader(tf.keras.utils.Sequence):
 
 
 def dataset(path, mode, image_shape, batch_size):
-
+    AUTOTUNE = tf.data.experimental.AUTOTUNE
     # get image and mask path according to the mode (train, valid, test)
     images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
     masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
@@ -135,23 +136,29 @@ def dataset(path, mode, image_shape, batch_size):
         y3.set_shape(image_shape + (1,))
         return x3, y3
 
-    datasets = datasets.map(parse_function)
+    datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
     if mode != 'test':
-        datasets = datasets.map(augment_function)
+        datasets = datasets.map(augment_function, num_parallel_calls=AUTOTUNE)
     datasets = datasets.batch(batch_size)
+    datasets = datasets.prefetch(AUTOTUNE)
     # datasets = datasets.repeat()
     return datasets
 
 
 if __name__ == '__main__':
-    valid_datasets = dataset(path='../', mode='train', image_shape=(256, 256), batch_size=10)
-    for b_image, b_mask in valid_datasets:
-        b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
-        plt.subplot(1, 2, 1)
-        plt.imshow(b_im)
-        plt.subplot(1, 2, 2)
-        plt.imshow(b_ms)
-        plt.show()
+    train_datasets = dataset(path='../', mode='train', image_shape=(256, 256), batch_size=10)
+    for b_image, b_mask in train_datasets:
+        t1 = time.time()
+        print(b_image.shape, b_mask.shape)
+        t2 = time.time()
+        t = t2 - t1
+        print('time consume: {:.4f}'.format(t))
+        # b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
+        # plt.subplot(1, 2, 1)
+        # plt.imshow(b_im)
+        # plt.subplot(1, 2, 2)
+        # plt.imshow(b_ms)
+        # plt.show()
 
     # dataloader = Dataloader(path='../', mode='valid', image_shape=(256, 256), batch_size=10)
     # for i, j in dataloader:

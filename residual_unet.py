@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, BatchNormalization, Activation, add, concatenate
@@ -78,74 +77,23 @@ def build_res_unet(input_shape):
     return Model(inputs=inputs, outputs=path)
 
 
-def iou(y_true, y_pred):
-    numerator = tf.reduce_sum(y_true * y_pred, [1, 2])
-    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
-    acc = numerator / (denominator - numerator)
-    return acc
+class Resunet(tf.keras.Model):
+    def __init__(self):
+        super(Resunet, self).__init__()
 
-# class Iou(tf.keras.metrics):
-#     def __init__(self, y_true, y_pred, axis):
-#         super(Iou, self).__init__()
-#         self.y_true = y_true
-#         self.y_pred = y_pred
-#         self.axis = axis
-#
-#     def __call__(self):
-#         numerator = tf.reduce_sum(self.y_true * self.y_pred, self.axis)
-#         denominator = tf.reduce_sum(self.y_true + self.y_pred, self.axis)
-#         return numerator / (denominator - numerator)
+    def call(self, inputs, training=None, mask=None):
+        pass
 
+    def train_step(self, data):
+        pass
 
-def dice(y_true, y_pred):
-    numerator = 2 * tf.reduce_sum(y_true * y_pred, [1, 2])
-    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
-    return numerator / denominator
-
-
-def dice_loss(y_true, y_pred):
-    numerator = 2 * tf.reduce_sum(y_true * y_pred, [1, 2])
-    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
-    return 1 - (numerator / denominator)
-
-
-def cross_entropy(y_true, y_pred):
-    bce = tf.keras.losses.BinaryCrossentropy(from_logits=True,
-                                             reduction=tf.keras.losses.Reduction.NONE)
-    loss = bce(y_true, y_pred)
-    # (batch, width, width), (4, 50, 50)
-    loss = tf.reduce_mean(loss, [1, 2])
-    loss = tf.expand_dims(loss, 1)
-    return loss
-
-
-def combined_loss(y_true, y_pred):
-    # y_true = tf.cast(y_true, tf.float32)
-    loss = cross_entropy(y_true, y_pred) + dice_loss(y_true, y_pred)
-    return loss
-
-
-def combined_log_loss(y_true, y_pred):
-    eps = 1E-10
-    # y_true = tf.cast(y_true, tf.float32)
-    loss = cross_entropy(y_true, y_pred) - tf.math.log(iou(y_true, y_pred) + eps)
-    return loss
+    def test_step(self, data):
+        pass
 
 
 if __name__ == '__main__':
-    a = np.random.random(10000).reshape(4, 50, 50, 1)
-    b = np.random.random(10000).reshape(4, 50, 50, 1)
-    # iou = iou(a, b)
-    # print(iou)
-
-    ce = cross_entropy(a, b)
-    print(ce)
-
-    cb = combined_log_loss(a, b)
-    print(cb)
-    # loss_value = tf.nn.compute_average_loss(loss, global_batch_size=4)
-    # loss1 = dice_loss(a, b)
-    # loss2 = combined_log_loss(a, b)
+    model = build_res_unet(input_shape=(256, 256, 7))
+    model.summary()
 
 
 

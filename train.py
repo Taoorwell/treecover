@@ -1,6 +1,6 @@
-# import math
 import tensorflow as tf
-from residual_unet import build_res_unet, combined_log_loss, dice_loss, cross_entropy, iou
+from residual_unet import build_res_unet
+from loss import iou, combined_log_loss
 from dataloder import dataset
 from tqdm import tqdm
 # Datasets construction
@@ -57,6 +57,9 @@ if __name__ == '__main__':
     # valid_dataloader = Dataloader(path='../', mode='valid', image_shape=(width, width, 7), batch_size=batch_size)
     train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
+    train_writer = tf.summary.create_file_writer('logs/train/')
+    valid_writer = tf.summary.create_file_writer('logs/valid/')
+
     # model compile
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
@@ -77,14 +80,17 @@ if __name__ == '__main__':
     # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     dist_train_datasets = strategy.experimental_distribute_dataset(train_datasets)
     dist_valid_datasets = strategy.experimental_distribute_dataset(valid_datasets)
+    bce = tf.keras.losses.BinaryCrossentropy(from_logits=True,
+                                             reduction=tf.keras.losses.Reduction.NONE)
 
     # @tf.function
     def train_step(x, y):
         with tf.GradientTape() as tape:
             logits = model(x, training=True)
-            loss = combined_log_loss(y, logits)
+            loss = bce(y, logits)
             print(loss)
             loss_value = tf.nn.compute_average_loss(loss, global_batch_size=batch_size)
+            print(loss_value)
         # gradients and optimizer
         grads = tape.gradient(loss_value, model.trainable_weights)
         optimizer.apply_gradients(zip(grads, model.trainable_weights))
@@ -93,7 +99,7 @@ if __name__ == '__main__':
 
     def valid_step(x, y):
         predictions = model(x, training=False)
-        valid_loss = tf.reduce_mean(combined_log_loss(y, predictions))
+        valid_loss = tf.reduce_mean(bce(y, predictions))
         valid_acc = tf.reduce_mean(iou(y, predictions))
         return valid_loss, valid_acc
 
