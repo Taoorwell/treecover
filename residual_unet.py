@@ -1,4 +1,3 @@
-import tensorflow as tf
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, BatchNormalization, Activation, add, concatenate
 
@@ -77,23 +76,38 @@ def build_res_unet(input_shape):
     return Model(inputs=inputs, outputs=path)
 
 
-class Resunet(tf.keras.Model):
-    def __init__(self):
-        super(Resunet, self).__init__()
-
-    def call(self, inputs, training=None, mask=None):
-        pass
-
-    def train_step(self, data):
-        pass
-
-    def test_step(self, data):
-        pass
+# class Resunet(tf.keras.Model):
+#     def __init__(self, inputs):
+#         super(Resunet, self).__init__()
+#         self.inputs = inputs
+#         self.encoder = encoder
+#         self.bridge = res_block
+#         self.decoder = decoder
+#
+#     def call(self, inputs, training=None, mask=None):
+#         x = self.encoder(inputs)
+#         x1 = self.bridge(x[2], [128, 128], [(2, 2), (1, 1)])
+#         x2 = self.decoder(x1, x)
+#         output = Conv2D(filters=1, kernel_size=(1, 1), activation='sigmoid')(x2)
+#         return output
+#
+#     def train_step(self, data):
+#         x, y = data
+#         with tf.GradientTape as tap:
+#             predictions = self.call(inputs=x, training=True)
+#             loss = combined_log_loss(y, predictions)
+#         grads = tap.gradient(loss, )
+#
+#     def test_step(self, data):
+#         pass
 
 
 if __name__ == '__main__':
-    model = build_res_unet(input_shape=(256, 256, 7))
+    model = build_res_unet((256, 256, 7))
     model.summary()
+
+
+
 
 
 

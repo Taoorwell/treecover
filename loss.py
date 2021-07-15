@@ -23,6 +23,14 @@ def dice_loss(y_true, y_pred):
     return tf.subtract(1, dice(y_true, y_pred))
 
 
+# class Diceloss(tf.keras.losses.Loss):
+#     # def __init__(self):
+#     #     super(Diceloss, self).__init__()
+#
+#     def call(self, y_true, y_pred):
+#         return tf.subtract(1, dice(y_true, y_pred))
+
+
 def cross_entropy(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
     bce = tf.keras.losses.BinaryCrossentropy(from_logits=True,
@@ -45,12 +53,15 @@ def combined_log_loss(y_true, y_pred):
 if __name__ == '__main__':
     a = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32))
     b = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32))
-    cb = combined_log_loss(a, b)
-    print(cb)
-    ce = cross_entropy(a, b)
-    print(ce)
-    iou = iou(a, b)
-    print(iou)
+
+    # dice1 = dice_loss(a, b)
+    # print(dice1)
+    # cb = combined_log_loss(a, b)
+    # print(cb)
+    # ce = cross_entropy(a, b)
+    # print(ce)
+    # iou = iou(a, b)
+    # print(iou)
     # path = '../'
     # images_path, masks_path = load_path(path=path, mode='test')
     # images = map(lambda x: get_image(x), images_path)
