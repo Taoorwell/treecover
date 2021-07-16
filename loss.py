@@ -20,7 +20,7 @@ def dice(y_true, y_pred):
 
 # Loss function, dice_loss and cross entropy, and combined loss function
 def dice_loss(y_true, y_pred):
-    return tf.subtract(1, dice(y_true, y_pred))
+    return tf.subtract(tf.constant(1, tf.float32), dice(y_true, y_pred))
 
 
 # class Diceloss(tf.keras.losses.Loss):
