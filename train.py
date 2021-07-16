@@ -21,14 +21,6 @@ if __name__ == '__main__':
     with strategy.scope():
         model = build_res_unet(input_shape=(width, width, 7))
         optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
-    # def lr_exponential_decay(e):
-    #     # something happen
-    #     decay_rate = 0.04
-    #     return initial_learning_rate * math.pow(decay_rate, e / epochs)
-    # def lr_cosine_decay(e):
-    #     cosine_decay = 0.5 * (1 + math.cos(math.pi * e / epochs))
-    #     return initial_learning_rate * cosine_decay
-    # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     dist_train_datasets = strategy.experimental_distribute_dataset(train_datasets)
     dist_valid_datasets = strategy.experimental_distribute_dataset(valid_datasets)
     # bce = tf.keras.losses.BinaryCrossentropy(from_logits=True,
@@ -73,39 +65,19 @@ if __name__ == '__main__':
             batch_loss, _ = dist_train_step(batch_image, batch_mask)
             train_loss.append(batch_loss)
             train_acc.append(_)
-            print('train loss: {}, train acc:{}'.format(batch_loss, _))
+            # print('train loss: {}, train acc:{}'.format(batch_loss, _))
 
         for v_batch_image, v_batch_mask in tqdm(dist_valid_datasets):
             valid_los, valid_ac = dist_valid_step(v_batch_image, v_batch_mask)
             valid_loss.append(valid_los)
             valid_acc.append(valid_ac)
-            print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
+            # print('valid loss: {}, valid acc:{}'.format(valid_los, valid_ac))
         print('Epoch: {}, Train loss:{}, acc:{}, Valid loss:{}, acc:{}'.format(epoch+1,
                                                                                tf.reduce_mean(train_loss),
                                                                                tf.reduce_mean(train_acc),
                                                                                tf.reduce_mean(valid_loss),
                                                                                tf.reduce_mean(valid_acc)))
-        # validation datasets
-        # for batch_image_valid, batch_mask_valid in valid_dataloader.load_batch(batch_size=batch_size):
-        #     val_logits = model(batch_image_valid, training=False)
-        #     valid_acc.append(dice(batch_mask_valid, val_logits))
-        # print('Epoch:{}, train acc:{}, train loss:{}, valid acc:{}'.format(epoch+1,
-        #                                                                    tf.reduce_mean(train_acc),
-        #                                                                    tf.reduce_mean(train_loss),
-        #                                                                    tf.reduce_mean(valid_acc)))
 
-    # tensorboard
-    # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_279',
-    #                                                        histogram_freq=1)
-
-    # model.fit(train_dataset,
-    #           steps_per_epoch=train_steps,
-    #           epochs=epochs,
-    #           validation_data=valid_dataset,
-    #           validation_steps=valid_steps,
-    #           callbacks=[tensorboard_callbacks, learning_rate_scheduler])
-    # model.save('model.h5')
-    # model.save_weights('checkpoints/ckpt-280')
 
 
 

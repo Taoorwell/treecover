@@ -88,6 +88,8 @@ class Dataloader(tf.keras.utils.Sequence):
 
 
 def dataset(path, mode, image_shape, batch_size):
+    options = tf.data.Options()
+    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     AUTOTUNE = tf.data.experimental.AUTOTUNE
     # get image and mask path according to the mode (train, valid, test)
     images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
@@ -141,12 +143,14 @@ def dataset(path, mode, image_shape, batch_size):
         datasets = datasets.map(augment_function, num_parallel_calls=AUTOTUNE)
     datasets = datasets.batch(batch_size)
     datasets = datasets.prefetch(AUTOTUNE)
+    datasets = datasets.with_options(options)
     # datasets = datasets.repeat()
     return datasets
 
 
 if __name__ == '__main__':
     train_datasets = dataset(path='../', mode='train', image_shape=(256, 256), batch_size=10)
+    print(len(train_datasets))
     for b_image, b_mask in train_datasets:
         t1 = time.time()
         print(b_image.shape, b_mask.shape)
