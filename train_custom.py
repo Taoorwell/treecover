@@ -1,7 +1,7 @@
 import math
 import tensorflow as tf
 from residual_unet import build_res_unet
-from loss import iou, combined_log_loss
+from loss import iou, combined_log_loss, dice_loss, cross_entropy
 from dataloder import dataset
 
 if __name__ == '__main__':
@@ -10,6 +10,7 @@ if __name__ == '__main__':
     batch_size = 10
     epochs = 50
     initial_learning_rate = 0.0001
+    loss_fn = dice_loss
     # train datasets
     train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
@@ -27,7 +28,7 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         model = build_res_unet(input_shape=(width, width, 7))
-        model.compile(optimizer=optimizer, loss=[combined_log_loss], metrics=[iou])
+        model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard

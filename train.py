@@ -1,6 +1,6 @@
 import tensorflow as tf
 from residual_unet import build_res_unet
-from loss import iou, combined_log_loss
+from loss import iou, combined_log_loss, dice_loss, cross_entropy
 from dataloder import dataset
 from tqdm import tqdm
 
@@ -11,11 +11,13 @@ if __name__ == '__main__':
     batch_size = 10
     epochs = 50
     initial_learning_rate = 0.0001
+    loss_fn = dice_loss
     # train dataloader
     train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
-    train_writer = tf.summary.create_file_writer('logs/train/')
-    valid_writer = tf.summary.create_file_writer('logs/valid/')
+
+    # train_writer = tf.summary.create_file_writer('logs/train/')
+    # valid_writer = tf.summary.create_file_writer('logs/valid/')
     # model compile
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
@@ -30,7 +32,7 @@ if __name__ == '__main__':
     def train_step(x, y):
         with tf.GradientTape() as tape:
             logits = model(x, training=True)
-            loss = combined_log_loss(y, logits)
+            loss = loss_fn(y, logits)
             loss_value = tf.nn.compute_average_loss(loss, global_batch_size=batch_size)
         # gradients and optimizer
         grads = tape.gradient(loss_value, model.trainable_weights)
@@ -40,7 +42,7 @@ if __name__ == '__main__':
 
     def valid_step(x, y):
         predictions = model(x, training=False)
-        valid_loss = tf.reduce_mean(combined_log_loss(y, predictions))
+        valid_loss = tf.reduce_mean(loss_fn(y, predictions))
         valid_acc = tf.reduce_mean(iou(y, predictions))
         return valid_loss, valid_acc
 
