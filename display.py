@@ -1,15 +1,15 @@
-from utility import *
+from utility import load_path, get_image, plot_mask
 from matplotlib import pyplot as plt
 import time
 
 if __name__ == '__main__':
     path = '../'
-    images_path, masks_path = load_data(path=path, mode='test')
+    images_path, masks_path = load_path(path=path, mode='train')
     print(len(images_path))
     for image_path, mask_path in zip(images_path, masks_path):
         image_id = image_path.split('_')[-1].split('.')[0]
-        image = get_raster(image_path)
-        mask = get_raster(mask_path)
+        image = get_image(image_path)
+        mask = get_image(mask_path)
         figure, axs = plt.subplots(1, 2)
         ax1 = axs[0]
         ax1.imshow(image[:, :, [4, 3, 2]])
