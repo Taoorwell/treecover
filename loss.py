@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 
 # Metrics-accuracy
@@ -41,25 +42,58 @@ def dice_loss(y_true, y_pred):
     return 1 - dice(y_true, y_pred)
 
 
-def cross_entropy(y_true, y_pred):
+def cross_entropy(y_true, y_pred, weight=False):
     y_true = tf.cast(y_true, tf.float32)
     bce_func = tf.keras.losses.BinaryCrossentropy(from_logits=True,
                                                   reduction=tf.keras.losses.Reduction.NONE)
     bce = bce_func(y_true, y_pred)  # no reduction shape: (batch_size, width, width), pixel level
     loss = tf.expand_dims(bce, axis=-1)
+    if weight:
+        loss = log_conv(y_true) * loss
     return tf.reduce_mean(loss, [1, 2])
 
 
+# weight map generating by LoG filter convolution
+def log_conv(y_true):
+    # Laplacian for edge extraction
+    laplacian_filter = tf.constant([[0, .25, 0], [.25, -1, .25], [0, .25, 0]],
+                                   dtype=tf.float32)
+    laplacian_filter = tf.reshape(laplacian_filter, (3, 3, 1, 1))
+
+    output = tf.nn.conv2d(y_true, filters=laplacian_filter, strides=1, padding='SAME')
+
+    edge = output != 0
+    edge = tf.cast(edge, tf.float32)
+
+    # Gaussian blur for pixel weight
+    def gaussian_2d(ksize, sigma=1):
+        m = (ksize - 1) / 2
+        y, x = np.ogrid[-m:m+1, -m:m+1]
+        value = np.exp(-(x*x + y*y) / (2.*sigma*sigma))
+        # value[value < np.finfo(value.dtype).eps * value.max()] = 0
+        sum_v = value.sum()
+        if sum_v != 0:
+            value /= sum_v
+        return value
+
+    gaussian_filter = gaussian_2d(ksize=3, sigma=1)
+    gaussian_filter = np.reshape(gaussian_filter, (3, 3, 1, 1))
+
+    pixel_weight = 10 * tf.nn.conv2d(edge, filters=gaussian_filter, strides=1, padding='SAME') + 1
+
+    return pixel_weight
+
+
 # combine cross entropy and focal tversky loss
-def combined_loss(y_true, y_pred):
-    loss = cross_entropy(y_true, y_pred) + 0.5 * focal_tversky_loss(y_true, y_pred)
+def combined_loss(y_true, y_pred, weight=True):
+    loss = cross_entropy(y_true, y_pred, weight=weight) + 0.5 * focal_tversky_loss(y_true, y_pred)
     return loss
 
 
 # combine cross entropy and logarithm of iou
-def combined_log_loss(y_true, y_pred):
+def combined_log_loss(y_true, y_pred, weight=False):
     eps = 1E-15
-    loss = cross_entropy(y_true, y_pred) - tf.math.log(iou(y_true, y_pred) + eps)
+    loss = cross_entropy(y_true, y_pred, weight=weight) - tf.math.log(iou(y_true, y_pred) + eps)
     return loss
 
 
@@ -67,8 +101,8 @@ if __name__ == '__main__':
     a = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32))
     b = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32))
 
-    final_loss = cross_entropy(a, b)
-    print(final_loss.shape)
+    final_loss = combined_log_loss(a, b, weight=True)
+    print(final_loss)
     # combined = combined_loss(a, b)
     # combined_1 = combined_log_loss(a, b)
     # print(tf.reduce_mean(combined), combined_1)
