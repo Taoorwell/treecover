@@ -1,6 +1,6 @@
 import tensorflow as tf
 from residual_unet import build_res_unet
-from loss import iou, combined_log_loss, dice_loss, cross_entropy
+from loss import *
 from dataloder import dataset
 from tqdm import tqdm
 
@@ -11,7 +11,7 @@ if __name__ == '__main__':
     batch_size = 10
     epochs = 50
     initial_learning_rate = 0.0001
-    loss_fn = dice_loss
+    loss_fn = combined_loss
     # train dataloader
     train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
