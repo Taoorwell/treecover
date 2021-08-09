@@ -91,7 +91,7 @@ def combined_loss(y_true, y_pred, weight=True):
 
 
 # combine cross entropy and logarithm of iou
-def combined_log_loss(y_true, y_pred, weight=False):
+def combined_log_loss(y_true, y_pred, weight=True):
     eps = 1E-15
     loss = cross_entropy(y_true, y_pred, weight=weight) - tf.math.log(iou(y_true, y_pred) + eps)
     return loss

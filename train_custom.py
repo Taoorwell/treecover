@@ -1,7 +1,7 @@
 import math
 import tensorflow as tf
 from residual_unet import build_res_unet
-from loss import iou, combined_loss, dice_loss, cross_entropy
+from loss import *
 from dataloder import dataset
 
 if __name__ == '__main__':
@@ -10,7 +10,7 @@ if __name__ == '__main__':
     batch_size = 5
     epochs = 50
     initial_learning_rate = 0.0001
-    loss_fn = combined_loss
+    loss_fn = combined_log_loss
     # train datasets
     train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
