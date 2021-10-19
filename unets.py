@@ -104,40 +104,40 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
                                dropout=0, recurrent=recurrent, residual=residual)
 
     # decoder part
-    for i, down_conv in enumerate([down_conv_4, down_conv_3, down_conv_2, down_conv_1]):
-        up = UpSampling2D(size=(2, 2))(bridge_conv_5)
-        if attention is True:
-            down_conv = attention_block(down_conv, up, n_filters=NUM_FILTER[(3-i)])
-        up = concatenate([up, down_conv], axis=-1)
-        up = conv_block(x=up, n_filters=NUM_FILTER[(3-i)], filter_size=FILTER_SIZE,
-                        dropout=0, recurrent=recurrent, residual=residual)
-        bridge_conv_5 = up
-    # # up 4
-    # up_4 = UpSampling2D(size=(2, 2))(bridge_conv_5)
-    # up_4 = concatenate([up_4, down_conv_4], axis=-1)
-    # up_conv_4 = conv_block(x=up_4, n_filters=4*NUM_FILTER, filter_size=FILTER_SIZE,
-    #                        dropout=0, recurrent=recurrent, residual=residual)
-    #
-    # # up 3
-    # up_3 = UpSampling2D(size=(2, 2))(up_conv_4)
-    # up_3 = concatenate([up_3, down_conv_3], axis=-1)
-    # up_conv_3 = conv_block(x=up_3, n_filters=3*NUM_FILTER, filter_size=FILTER_SIZE,
-    #                        dropout=0, recurrent=recurrent, residual=residual)
-    #
-    # # up 2
-    # up_2 = UpSampling2D(size=(2, 2))(up_conv_3)
-    # up_2 = concatenate([up_2, down_conv_2], axis=-1)
-    # up_conv_2 = conv_block(x=up_2, n_filters=2*NUM_FILTER, filter_size=FILTER_SIZE,
-    #                        dropout=0, recurrent=recurrent, residual=residual)
-    #
-    # # up 1
-    # up_1 = UpSampling2D(size=(2, 2))(up_conv_2)
-    # up_1 = concatenate([up_1, down_conv_1], axis=-1)
-    # up_conv_1 = conv_block(x=up_1, n_filters=NUM_FILTER, filter_size=FILTER_SIZE,
-    #                        dropout=0, recurrent=recurrent, residual=residual)
+    # for i, down_conv in enumerate([down_conv_4, down_conv_3, down_conv_2, down_conv_1]):
+    #     up = UpSampling2D(size=(2, 2))(bridge_conv_5)
+    #     if attention is True:
+    #         down_conv = attention_block(down_conv, up, n_filters=NUM_FILTER[(3-i)])
+    #     up = concatenate([up, down_conv], axis=-1)
+    #     up = conv_block(x=up, n_filters=NUM_FILTER[(3-i)], filter_size=FILTER_SIZE,
+    #                     dropout=0, recurrent=recurrent, residual=residual)
+    #     bridge_conv_5 = up
+    # up 4
+    up_4 = UpSampling2D(size=(2, 2))(bridge_conv_5)
+    up_4 = concatenate([up_4, down_conv_4], axis=-1)
+    up_conv_4 = conv_block(x=up_4, n_filters=NUM_FILTER[3], filter_size=FILTER_SIZE,
+                           dropout=0, recurrent=recurrent, residual=residual)
+
+    # up 3
+    up_3 = UpSampling2D(size=(2, 2))(up_conv_4)
+    up_3 = concatenate([up_3, down_conv_3], axis=-1)
+    up_conv_3 = conv_block(x=up_3, n_filters=NUM_FILTER[2], filter_size=FILTER_SIZE,
+                           dropout=0, recurrent=recurrent, residual=residual)
+
+    # up 2
+    up_2 = UpSampling2D(size=(2, 2))(up_conv_3)
+    up_2 = concatenate([up_2, down_conv_2], axis=-1)
+    up_conv_2 = conv_block(x=up_2, n_filters=NUM_FILTER[1], filter_size=FILTER_SIZE,
+                           dropout=0, recurrent=recurrent, residual=residual)
+
+    # up 1
+    up_1 = UpSampling2D(size=(2, 2))(up_conv_2)
+    up_1 = concatenate([up_1, down_conv_1], axis=-1)
+    up_conv_1 = conv_block(x=up_1, n_filters=NUM_FILTER[0], filter_size=FILTER_SIZE,
+                           dropout=0, recurrent=recurrent, residual=residual)
 
     # Output part
-    conv_res = Conv2D(n_classes, kernel_size=(1, 1))(bridge_conv_5)
+    conv_res = Conv2D(n_classes, kernel_size=(1, 1))(up_conv_1)
     conv_res = BatchNormalization()(conv_res)
     conv_res = Activation('sigmoid')(conv_res)
 
@@ -147,7 +147,7 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
 
 
 if __name__ == '__main__':
-    unet = U_Net(input_shape=(256, 256, 7), n_classes=1, recurrent=True, residual=True, attention=True)
+    unet = U_Net(input_shape=(256, 256, 7), n_classes=1, recurrent=False, residual=True, attention=False)
     unet.summary()
 
 
