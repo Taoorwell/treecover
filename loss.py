@@ -60,7 +60,10 @@ def log_conv(y_true):
                                    dtype=tf.float32)
     laplacian_filter = tf.reshape(laplacian_filter, (3, 3, 1, 1))
 
-    output = tf.nn.conv2d(y_true, filters=laplacian_filter, strides=1, padding='SAME')
+    output = tf.nn.conv2d(y_true,
+                          filters=laplacian_filter,
+                          strides=1,
+                          padding=[[0, 0], [1, 1], [1, 1], [0, 0]])
 
     edge = output != 0
     edge = tf.cast(edge, tf.float32)
@@ -79,7 +82,10 @@ def log_conv(y_true):
     gaussian_filter = gaussian_2d(ksize=3, sigma=1)
     gaussian_filter = np.reshape(gaussian_filter, (3, 3, 1, 1))
 
-    pixel_weight = 10 * tf.nn.conv2d(edge, filters=gaussian_filter, strides=1, padding='SAME') + 1
+    pixel_weight = 10 * tf.nn.conv2d(edge,
+                                     filters=gaussian_filter,
+                                     strides=1,
+                                     padding='SAME') + 1
 
     return pixel_weight
 

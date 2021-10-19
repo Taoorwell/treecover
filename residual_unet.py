@@ -21,40 +21,40 @@ def res_block(x, nb_filters, strides):
 def encoder(x):
     to_decoder = []
 
-    main_path = res_block(x, [32, 32], [(1, 1), (1, 1)])
+    main_path = res_block(x, [14, 14], [(1, 1), (1, 1)])
     to_decoder.append(main_path)
 
-    main_path = res_block(main_path, [64, 64], [(2, 2), (1, 1)])
+    main_path = res_block(main_path, [42, 42], [(2, 2), (1, 1)])
     to_decoder.append(main_path)
 
-    main_path = res_block(main_path, [128, 128], [(2, 2), (1, 1)])
+    main_path = res_block(main_path, [84, 84], [(2, 2), (1, 1)])
     to_decoder.append(main_path)
 
     return to_decoder
 
 
-def slice_concatenate(x1, x2):
-    if x1.shape != x2.shape:
-        x1 = x1[:, :x2.shape[1], :x2.shape[2], :]
-    x = concatenate([x1, x2], axis=3)
-    return x
+# def slice_concatenate(x1, x2):
+#     if x1.shape != x2.shape:
+#         x1 = x1[:, :x2.shape[1], :x2.shape[2], :]
+#     x = concatenate([x1, x2], axis=3)
+#     return x
 
 
 def decoder(x, from_encoder):
     main_path = UpSampling2D(size=(2, 2))(x)
-    main_path = slice_concatenate(main_path, from_encoder[2])
-    # main_path = concatenate((main_path, from_encoder[2]), axis=3)
-    main_path = res_block(main_path, [128, 128], [(1, 1), (1, 1)])
+    # main_path = slice_concatenate(main_path, from_encoder[2])
+    main_path = concatenate((main_path, from_encoder[2]), axis=3)
+    main_path = res_block(main_path, [84, 84], [(1, 1), (1, 1)])
 
     main_path = UpSampling2D(size=(2, 2))(main_path)
-    main_path = slice_concatenate(main_path, from_encoder[1])
-    # main_path = concatenate((main_path, from_encoder[1]), axis=3)
-    main_path = res_block(main_path, [64, 64], [(1, 1), (1, 1)])
+    # main_path = slice_concatenate(main_path, from_encoder[1])
+    main_path = concatenate((main_path, from_encoder[1]), axis=3)
+    main_path = res_block(main_path, [42, 42], [(1, 1), (1, 1)])
 
     main_path = UpSampling2D(size=(2, 2))(main_path)
-    main_path = slice_concatenate(main_path, from_encoder[0])
-    # main_path = concatenate((main_path, from_encoder[0]), axis=3)
-    main_path = res_block(main_path, [32, 32], [(1, 1), (1, 1)])
+    # main_path = slice_concatenate(main_path, from_encoder[0])
+    main_path = concatenate((main_path, from_encoder[0]), axis=3)
+    main_path = res_block(main_path, [14, 14], [(1, 1), (1, 1)])
 
     return main_path
 
@@ -65,7 +65,7 @@ def build_res_unet(input_shape):
     to_decoder = encoder(inputs)
     # print(to_decoder[0].shape, to_decoder[1].shape, to_decoder[2].shape)
     '''bridge'''
-    path = res_block(to_decoder[2], [128, 128], [(2, 2), (1, 1)])
+    path = res_block(to_decoder[2], [84, 84], [(2, 2), (1, 1)])
     # print('bridge output shape:', path.shape)
     '''decoder'''
     path = decoder(path, from_encoder=to_decoder)

@@ -10,7 +10,7 @@ if __name__ == '__main__':
     model.load_weights('checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_309')
     # print(subplots)
     for plot in tqdm(subplots):
-        image = get_raster(raster_path=plot)
+        image = get_image(raster_path=plot)
         pre_images = np.zeros(((image.shape[0] // width) * width, (image.shape[1] // width) * width, 1),
                               dtype=np.float32)
         for r in tqdm(range(image.shape[0] // width)):

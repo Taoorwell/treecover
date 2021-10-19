@@ -1,6 +1,6 @@
 import math
 import tensorflow as tf
-from residual_unet import build_res_unet
+from unets import U_Net
 from loss import *
 from dataloder import dataset
 
@@ -10,10 +10,10 @@ if __name__ == '__main__':
     batch_size = 5
     epochs = 50
     initial_learning_rate = 0.0001
-    loss_fn = combined_log_loss
+    loss_fn = combined_loss
     # train datasets
-    train_datasets = dataset(path='../', mode='train', image_shape=(width, width), batch_size=batch_size)
-    valid_datasets = dataset(path='../', mode='valid', image_shape=(width, width), batch_size=batch_size)
+    train_datasets = dataset(path=r'../quality/', mode='train', image_shape=(width, width), batch_size=batch_size)
+    valid_datasets = dataset(path=r'../quality/', mode='valid', image_shape=(width, width), batch_size=batch_size)
 
     optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
     # def lr_exponential_decay(e):
@@ -27,7 +27,8 @@ if __name__ == '__main__':
 
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
-        model = build_res_unet(input_shape=(width, width, 7))
+        # model = build_res_unet(input_shape=(width, width, 7))
+        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=False)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)

@@ -5,7 +5,8 @@ import os
 from utility import get_image
 import tensorflow as tf
 import time
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
+from loss import log_conv
 
 
 class Dataloader(tf.keras.utils.Sequence):
@@ -91,18 +92,20 @@ def dataset(path, mode, image_shape, batch_size):
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     AUTOTUNE = tf.data.experimental.AUTOTUNE
+
     # get image and mask path according to the mode (train, valid, test)
-    images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
+    images_path = sorted(glob(os.path.join(path, r"images/*.tif")))
+    masks_path = sorted(glob(os.path.join(path, r"high/*.tif")))
     length = len(images_path)
     np.random.seed(1)
     idx = np.random.permutation(length)
+    train_idx, test_idx = idx[:-30], idx[-30:]
     if mode == 'train':
-        idx = idx[:int(0.8 * length)]
+        idx = train_idx[:int(0.9 * len(train_idx))]
     elif mode == 'valid':
-        idx = idx[int(0.8 * length):int(0.9 * length)]
+        idx = train_idx[int(0.9 * len(train_idx)):]
     else:
-        idx = idx[int(0.9 * length):]
+        idx = test_idx
 
     image_path = [images_path[i] for i in idx]
     mask_path = [masks_path[i] for i in idx]
@@ -149,7 +152,7 @@ def dataset(path, mode, image_shape, batch_size):
 
 
 if __name__ == '__main__':
-    train_datasets = dataset(path='../', mode='train', image_shape=(256, 256), batch_size=10)
+    train_datasets = dataset(path=r'../quality/', mode='train', image_shape=(256, 256), batch_size=10)
     print(len(train_datasets))
     for b_image, b_mask in train_datasets:
         t1 = time.time()
@@ -157,16 +160,27 @@ if __name__ == '__main__':
         t2 = time.time()
         t = t2 - t1
         print('time consume: {:.4f}'.format(t))
-        # b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
-        # plt.subplot(1, 2, 1)
-        # plt.imshow(b_im)
-        # plt.subplot(1, 2, 2)
-        # plt.imshow(b_ms)
-        # plt.show()
+        # b_weight_map = log_conv(b_mask)[0, :, :, 0]
+        # print(b_weight_map.shape)
+        b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
+        plt.subplot(1, 2, 1)
+        plt.imshow(b_im)
+        plt.xticks([])
+        plt.yticks([])
+        plt.xlabel('image')
 
-    # dataloader = Dataloader(path='../', mode='valid', image_shape=(256, 256), batch_size=10)
-    # for i, j in dataloader:
-    #     print(i.shape, j.shape)
-    # strategy = tf.distribute.MirroredStrategy()
-    # dist_train_dataloader = strategy.experimental_distribute_dataset(valid_datasets)
+        plt.subplot(1, 2, 2)
+        plt.imshow(b_ms)
+        plt.xticks([])
+        plt.yticks([])
+        plt.xlabel('mask')
+
+        # plt.subplot(1, 3, 3)
+        # plt.imshow(b_weight_map)
+        # plt.xticks([])
+        # plt.yticks([])
+        # plt.xlabel('weight map')
+
+        plt.show()
+#         # break
 

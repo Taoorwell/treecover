@@ -8,21 +8,22 @@ import scipy.io as sio
 
 def load_path(path, mode):
     # train, valid, test: 235, 29, 30
-    images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
-    length = len(images_path)
+    path = [sorted(glob(p + '/*.tif')) for p in path]
+    # images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
+    # masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
+    length = len(path[1])
     np.random.seed(1)
     idx = np.random.permutation(length)
+    train_idx, test_idx = idx[:-30], idx[-30:]
     if mode == 'train':
-        idx = idx[:int(0.8 * length)]
+        idx = train_idx[:int(0.9 * len(train_idx))]
     elif mode == 'valid':
-        idx = idx[int(0.8 * length):int(0.9 * length)]
+        idx = train_idx[int(0.9 * len(train_idx)):]
     else:
-        idx = idx[int(0.9 * length):]
-
-    image_path = [images_path[i] for i in idx]
-    mask_path = [masks_path[i] for i in idx]
-    return image_path, mask_path
+        idx = test_idx
+    for i, p in enumerate(path):
+        path[i] = [p[i] for i in idx]
+    return path
 
 
 def get_image(raster_path):
@@ -43,7 +44,7 @@ def write_geotiff(name, prediction, original_path):
 
     driver = gdal.GetDriverByName('GTiff')
     rows, cols = prediction.shape
-    dataset = driver.Create(name, cols, rows, 1, gdal.GDT_Byte)
+    dataset = driver.Create(name, cols, rows, 1, gdal.GDT_Float32)
     dataset.SetGeoTransform(geo)
     dataset.SetProjection(proj)
     band = dataset.GetRasterBand(1)
@@ -69,7 +70,7 @@ def plot_mask(result):
     for c, i in palette.items():
         m = arr_2d == c
         arr_3d[m] = i
-    plt.imshow(arr_3d)
+    return arr_3d
 
 
 def get_mat_info(mat_data_path):
