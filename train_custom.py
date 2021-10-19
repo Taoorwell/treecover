@@ -7,7 +7,7 @@ from dataloder import dataset
 if __name__ == '__main__':
     # some parameters
     width = 256
-    batch_size = 5
+    batch_size = 6
     epochs = 50
     initial_learning_rate = 0.0001
     loss_fn = combined_loss
@@ -28,8 +28,9 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # model = build_res_unet(input_shape=(width, width, 7))
-        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=False)
+        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
+    model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
