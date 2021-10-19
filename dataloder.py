@@ -95,7 +95,7 @@ def dataset(path, mode, image_shape, batch_size):
 
     # get image and mask path according to the mode (train, valid, test)
     images_path = sorted(glob(os.path.join(path, r"images/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, r"high/*.tif")))
+    masks_path = sorted(glob(os.path.join(path, r"low/*.tif")))
     length = len(images_path)
     np.random.seed(1)
     idx = np.random.permutation(length)
@@ -109,7 +109,8 @@ def dataset(path, mode, image_shape, batch_size):
 
     image_path = [images_path[i] for i in idx]
     mask_path = [masks_path[i] for i in idx]
-
+    for im, ms in zip(image_path, mask_path):
+        print(im, ms) 
     # creat path datasets using tf.data.Dataset
     datasets = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
     # creat parse function to parse path to image

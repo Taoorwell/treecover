@@ -8,9 +8,9 @@ if __name__ == '__main__':
     # some parameters
     width = 256
     batch_size = 6
-    epochs = 50
+    epochs = 100
     initial_learning_rate = 0.0001
-    loss_fn = combined_loss
+    loss_fn = dice_loss
     # train datasets
     train_datasets = dataset(path=r'../quality/', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path=r'../quality/', mode='valid', image_shape=(width, width), batch_size=batch_size)
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # model = build_res_unet(input_shape=(width, width, 7))
-        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
+        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=False, attention=False)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
     model.summary()
 
