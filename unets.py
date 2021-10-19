@@ -73,43 +73,43 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
     """
 
     # network structure parameters
-    NUM_FILTER = 14
+    NUM_FILTER = [14, 28, 56, 112, 140]
     FILTER_SIZE = 3
 
     inputs = Input(input_shape, dtype=tf.float32)
 
     # encoder part
     # down 1
-    down_conv_1 = conv_block(x=inputs, n_filters=NUM_FILTER, filter_size=FILTER_SIZE,
+    down_conv_1 = conv_block(x=inputs, n_filters=NUM_FILTER[0], filter_size=FILTER_SIZE,
                              dropout=0, recurrent=recurrent, residual=residual)
     down_pool_1 = MaxPool2D(pool_size=(2, 2))(down_conv_1)
 
     # down 2
-    down_conv_2 = conv_block(x=down_pool_1, n_filters=2*NUM_FILTER, filter_size=FILTER_SIZE,
+    down_conv_2 = conv_block(x=down_pool_1, n_filters=NUM_FILTER[1], filter_size=FILTER_SIZE,
                              dropout=0, recurrent=recurrent, residual=residual)
     down_pool_2 = MaxPool2D(pool_size=(2, 2))(down_conv_2)
 
     # down 3
-    down_conv_3 = conv_block(x=down_pool_2, n_filters=3*NUM_FILTER, filter_size=FILTER_SIZE,
+    down_conv_3 = conv_block(x=down_pool_2, n_filters=NUM_FILTER[2], filter_size=FILTER_SIZE,
                              dropout=0, recurrent=recurrent, residual=residual)
     down_pool_3 = MaxPool2D(pool_size=(2, 2))(down_conv_3)
 
     # down 4
-    down_conv_4 = conv_block(x=down_pool_3, n_filters=4*NUM_FILTER, filter_size=FILTER_SIZE,
+    down_conv_4 = conv_block(x=down_pool_3, n_filters=NUM_FILTER[3], filter_size=FILTER_SIZE,
                              dropout=0, recurrent=recurrent, residual=residual)
     down_pool_4 = MaxPool2D(pool_size=(2, 2))(down_conv_4)
 
     # bridge
-    bridge_conv_5 = conv_block(x=down_pool_4, n_filters=5*NUM_FILTER, filter_size=FILTER_SIZE,
+    bridge_conv_5 = conv_block(x=down_pool_4, n_filters=NUM_FILTER[4], filter_size=FILTER_SIZE,
                                dropout=0, recurrent=recurrent, residual=residual)
 
     # decoder part
     for i, down_conv in enumerate([down_conv_4, down_conv_3, down_conv_2, down_conv_1]):
         up = UpSampling2D(size=(2, 2))(bridge_conv_5)
         if attention is True:
-            down_conv = attention_block(down_conv, up, n_filters=(4-i)*NUM_FILTER)
+            down_conv = attention_block(down_conv, up, n_filters=NUM_FILTER[(3-i)])
         up = concatenate([up, down_conv], axis=-1)
-        up = conv_block(x=up, n_filters=(4-i)*NUM_FILTER, filter_size=FILTER_SIZE,
+        up = conv_block(x=up, n_filters=NUM_FILTER[(3-i)], filter_size=FILTER_SIZE,
                         dropout=0, recurrent=recurrent, residual=residual)
         bridge_conv_5 = up
     # # up 4
