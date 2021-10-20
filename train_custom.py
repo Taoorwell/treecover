@@ -8,9 +8,9 @@ if __name__ == '__main__':
     # some parameters
     width = 256
     batch_size = 6
-    epochs = 100
+    epochs = 300
     initial_learning_rate = 0.0001
-    loss_fn = dice_loss
+    loss_fn = combined_log_loss
     # train datasets
     train_datasets = dataset(path=r'../quality/', mode='train', image_shape=(width, width), batch_size=batch_size)
     valid_datasets = dataset(path=r'../quality/', mode='valid', image_shape=(width, width), batch_size=batch_size)
@@ -44,4 +44,4 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler])
     # model.save('model.h5')
-    # model.save_weights('checkpoints/ckpt-280')
+    model.save_weights('checkpoints/ckpt-sta')

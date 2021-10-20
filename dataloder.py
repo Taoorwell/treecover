@@ -95,7 +95,7 @@ def dataset(path, mode, image_shape, batch_size):
 
     # get image and mask path according to the mode (train, valid, test)
     images_path = sorted(glob(os.path.join(path, r"images/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, r"low/*.tif")))
+    masks_path = sorted(glob(os.path.join(path, r"high/*.tif")))
     length = len(images_path)
     np.random.seed(1)
     idx = np.random.permutation(length)

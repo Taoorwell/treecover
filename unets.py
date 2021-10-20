@@ -146,7 +146,7 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
 
 
 if __name__ == '__main__':
-    unet = U_Net(input_shape=(256, 256, 7), n_classes=1, recurrent=False, residual=True, attention=True)
+    unet = U_Net(input_shape=(256, 256, 7), n_classes=1, recurrent=True, residual=True, attention=True)
     unet.summary()
 
 
