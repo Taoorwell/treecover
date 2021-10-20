@@ -1,9 +1,19 @@
 from sys import stdout
-from utility import get_image, write_geotiff
-from residual_unet import build_res_unet
+from dataloder import dataset
+from utility import rgb_mask
+# from utility import get_image, write_geotiff
+from unets import U_Net
 import time
 import numpy as np
 from matplotlib import pyplot as plt
+
+
+def iou(y_true, y_pred):
+    # y_true and y_pred shape: batch_size, image_width, image_width, 1 or none.
+    # reduce_sum and axis [1, 2], get each image accuracy.
+    numerator = np.sum(y_true * y_pred)
+    denominator = np.sum(y_true + y_pred)
+    return numerator / (denominator - numerator)
 
 
 def compute_pyramid_patch_weight_loss(width, height):
@@ -218,38 +228,61 @@ layers in the input array.
 if __name__ == '__main__':
     # Parameter define
     width, height = 256, 256
-    image_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0.tif'
-    output_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0_pre.tif'
+    # image_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0.tif'
+    # output_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0_pre.tif'
     # Trained Model loading
-    model = build_res_unet(input_shape=(width, width, 7))
-    model.load_weights('checkpoints/checkpoints/ckpt-1m_combined_log_cosine_aug_279')
+    # model = build_res_unet(input_shape=(width, width, 7))
+    model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=False)
+    model.load_weights('checkpoints/ckpt-res')
 
     # Image loading for further prediction
-    large_image = get_image(raster_path=image_path)
-    print(large_image.shape)
+    # large_image = get_image(raster_path=image_path)
+    dataset = dataset(path=r'../quality/', mode='test', image_shape=(256, 256), batch_size=1)
+    acc = []
+    for im, ms in dataset:
+        # print(im.shape, ms.shape)
+        image_arr, mask_arr = im.numpy(), ms.numpy()
+        # print(image_arr.shape, mask_arr.shape)
+        # Prediction on large Image
+        output, _ = predict_on_array(model=model,
+                                     arr=image_arr[0],
+                                     in_shape=(256, 256, 7),
+                                     out_bands=1,
+                                     stride=200,
+                                     batchsize=20,
+                                     augmentation=True,
+                                     verbose=False,
+                                     report_time=True)
+        output = (output > 0.5) * 1
+        acc_iou = iou(mask_arr[0], output)
+        acc.append(acc_iou)
+        # Display the results
+        plt.subplot(131)
+        plt.imshow(image_arr[0, :, :, :3])
+        plt.xlabel('image')
+        plt.xticks([])
+        plt.yticks([])
 
-    # Prediction on large Image
-    output, _ = predict_on_array(model=model,
-                                 arr=large_image,
-                                 in_shape=(256, 256, 7),
-                                 out_bands=1,
-                                 stride=200,
-                                 batchsize=20,
-                                 augmentation=True,
-                                 verbose=True,
-                                 report_time=True)
+        plt.subplot(132)
+        plt.imshow(rgb_mask(mask_arr[0, :, :, 0]))
+        plt.xlabel('mask')
+        plt.xticks([])
+        plt.yticks([])
 
-    # Display the results
-    plt.subplot(121)
-    plt.imshow(large_image[:, :, [4, 3, 2]])
+        plt.subplot(133)
+        plt.imshow(rgb_mask(output[:, :, 0]))
+        plt.xlabel('mask_pre')
+        plt.title('Iou:{:.2%}'.format(acc_iou))
+        plt.xticks([])
+        plt.yticks([])
 
-    plt.subplot(122)
-    plt.imshow(output[:, :, 0])
-    plt.show()
+        plt.show()
+        # Write out prediction to Tif file with coordinates
+        # write_geotiff(output_path, output, image_path)
+        # break
+        # print('Writing out finish!')
+    print('Average Iou acc:{:.2%}'.format(np.mean(acc)))
 
-    # Write out prediction to Tif file with coordinates
-    write_geotiff(output_path, output, image_path)
-    print('Writing out finish!')
 
 
 

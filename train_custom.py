@@ -1,5 +1,4 @@
 import math
-# import tensorflow as tf
 from unets import U_Net
 from loss import *
 from dataloder import dataset
@@ -29,14 +28,14 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # model = build_res_unet(input_shape=(width, width, 7))
-        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=True)
+        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=False, attention=False)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
     model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/1m_combined_log_cosine_aug_279',
-    #                                                        histogram_freq=1)
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_sta_300',
+                                                           histogram_freq=1)
 
     model.fit(train_datasets,
               steps_per_epoch=len(train_datasets),
@@ -45,4 +44,4 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-r_a_280')
+    model.save_weights('checkpoints/ckpt-unet_sta_300')

@@ -109,8 +109,8 @@ def dataset(path, mode, image_shape, batch_size):
 
     image_path = [images_path[i] for i in idx]
     mask_path = [masks_path[i] for i in idx]
-    for im, ms in zip(image_path, mask_path):
-        print(im, ms)
+    # for im, ms in zip(image_path, mask_path):
+    #     print(im, ms)
     # creat path datasets using tf.data.Dataset
     datasets = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
     # creat parse function to parse path to image

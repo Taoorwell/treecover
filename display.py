@@ -1,4 +1,4 @@
-from utility import load_path, get_image, plot_mask
+from utility import load_path, get_image, rgb_mask
 from matplotlib import pyplot as plt
 import time
 
@@ -14,20 +14,20 @@ if __name__ == '__main__':
 
         figure, axs = plt.subplots(nrows=1, ncols=3, figsize=(15, 9))
         ax1 = axs.flat[0]
-        ax1.imshow(image[:, :, [4, 3, 2]])
+        ax1.imshow(image[:, :, :3])
         ax1.set_xlabel('Image_{}'.format(image_id))
         ax1.set_xticks([])
         ax1.set_yticks([])
 
         ax2 = axs.flat[1]
-        high_mask = plot_mask(high_mask[:, :, 0])
+        high_mask = rgb_mask(high_mask[:, :, 0])
         ax2.imshow(high_mask)
         ax2.set_xlabel('high_mask_{}'.format(image_id))
         ax2.set_xticks([])
         ax2.set_yticks([])
 
         ax3 = axs.flat[2]
-        low_mask = plot_mask(low_mask[:, :, 0])
+        low_mask = rgb_mask(low_mask[:, :, 0])
         ax3.imshow(low_mask)
         ax3.set_xlabel('low_mask_{}'.format(image_id))
         ax3.set_xticks([])
@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
         plt.show()
 
-        time.sleep(5)
+        # time.sleep(1)

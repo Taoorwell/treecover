@@ -64,7 +64,7 @@ def norma_data(data, norma_methods="z-score"):
     return arr
 
 
-def plot_mask(result):
+def rgb_mask(result):
     arr_2d = result
     arr_3d = np.zeros((arr_2d.shape[0], arr_2d.shape[1], 3), dtype=np.uint8)
     for c, i in palette.items():
