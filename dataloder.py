@@ -101,16 +101,16 @@ def dataset(path, mode, image_shape, batch_size):
     idx = np.random.permutation(length)
     train_idx, test_idx = idx[:-30], idx[-30:]
     if mode == 'train':
-        idx = train_idx[:int(0.9 * len(train_idx))]
+        idx = train_idx[:280]
     elif mode == 'valid':
-        idx = train_idx[int(0.9 * len(train_idx)):]
+        idx = train_idx[280:]
     else:
         idx = test_idx
 
     image_path = [images_path[i] for i in idx]
     mask_path = [masks_path[i] for i in idx]
     for im, ms in zip(image_path, mask_path):
-        print(im, ms) 
+        print(im, ms)
     # creat path datasets using tf.data.Dataset
     datasets = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
     # creat parse function to parse path to image
