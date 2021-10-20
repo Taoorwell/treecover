@@ -1,5 +1,5 @@
 import math
-import tensorflow as tf
+# import tensorflow as tf
 from unets import U_Net
 from loss import *
 from dataloder import dataset
