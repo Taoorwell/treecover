@@ -232,8 +232,8 @@ if __name__ == '__main__':
     # output_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0_pre.tif'
     # Trained Model loading
     # model = build_res_unet(input_shape=(width, width, 7))
-    model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=False)
-    model.load_weights('checkpoints/ckpt-res')
+    model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=True)
+    model.load_weights('checkpoints/ckpt-unet_res_att_300_low')
 
     # Image loading for further prediction
     # large_image = get_image(raster_path=image_path)
@@ -253,34 +253,36 @@ if __name__ == '__main__':
                                      augmentation=True,
                                      verbose=False,
                                      report_time=True)
-        output = (output > 0.5) * 1
+        # output = (output > 0.5) * 1
         acc_iou = iou(mask_arr[0], output)
         acc.append(acc_iou)
+        output = (output > 0.5) * 1
         # Display the results
-        plt.subplot(131)
-        plt.imshow(image_arr[0, :, :, :3])
-        plt.xlabel('image')
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(131)
+        # plt.imshow(image_arr[0, :, :, :3])
+        # plt.xlabel('image')
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.subplot(132)
-        plt.imshow(rgb_mask(mask_arr[0, :, :, 0]))
-        plt.xlabel('mask')
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(132)
+        # plt.imshow(rgb_mask(mask_arr[0, :, :, 0]))
+        # plt.xlabel('mask')
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.subplot(133)
-        plt.imshow(rgb_mask(output[:, :, 0]))
-        plt.xlabel('mask_pre')
-        plt.title('Iou:{:.2%}'.format(acc_iou))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(133)
+        # plt.imshow(rgb_mask(output[:, :, 0]))
+        # plt.xlabel('mask_pre')
+        # plt.title('Iou:{:.2%}'.format(acc_iou))
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.show()
+        # plt.show()
         # Write out prediction to Tif file with coordinates
         # write_geotiff(output_path, output, image_path)
         # break
         # print('Writing out finish!')
+    print(acc)
     print('Average Iou acc:{:.2%}'.format(np.mean(acc)))
 
 

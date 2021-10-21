@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_res_att_300',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_res_att_300_low',
                                                            histogram_freq=1)
 
     model.fit(train_datasets,
@@ -44,4 +44,4 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-unet_res_att_300')
+    model.save_weights('checkpoints/ckpt-unet_res_att_300_low')
