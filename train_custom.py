@@ -12,8 +12,10 @@ if __name__ == '__main__':
     initial_learning_rate = 0.0001
     loss_fn = dice_loss
     # train datasets
-    train_datasets = dataset(path=r'../quality/', mode='train', image_shape=(width, width), batch_size=train_batch_size)
-    valid_datasets = dataset(path=r'../quality/', mode='valid', image_shape=(width, width), batch_size=valid_batch_size)
+    train_datasets = dataset(path=r'../quality/low/', mode='train',
+                             image_shape=(width, width), batch_size=train_batch_size)
+    valid_datasets = dataset(path=r'../quality/low/', mode='valid',
+                             image_shape=(width, width), batch_size=valid_batch_size)
 
     optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
     # def lr_exponential_decay(e):
@@ -28,13 +30,13 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # model = build_res_unet(input_shape=(width, width, 7))
-        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=False, residual=True, attention=True)
+        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
     model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_res_att_300_low',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_rec_res_att_300_low',
                                                            histogram_freq=1)
 
     model.fit(train_datasets,
@@ -44,4 +46,4 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-unet_res_att_300_low')
+    model.save_weights('checkpoints/ckpt-unet_rec_res_att_300_low')

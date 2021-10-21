@@ -94,8 +94,8 @@ def dataset(path, mode, image_shape, batch_size):
     AUTOTUNE = tf.data.experimental.AUTOTUNE
 
     # get image and mask path according to the mode (train, valid, test)
-    images_path = sorted(glob(os.path.join(path, r"images/*.tif")))
-    masks_path = sorted(glob(os.path.join(path, r"high/*.tif")))
+    images_path = sorted(glob(os.path.join(r'../quality/', r"images/*.tif")))
+    masks_path = sorted(glob(os.path.join(path, '*.tif')))
     length = len(images_path)
     np.random.seed(1)
     idx = np.random.permutation(length)
@@ -172,7 +172,7 @@ def dataset(path, mode, image_shape, batch_size):
 
 
 if __name__ == '__main__':
-    train_datasets = dataset(path=r'../quality/', mode='test', image_shape=(256, 256), batch_size=10)
+    train_datasets = dataset(path=r'../quality/low/', mode='test', image_shape=(256, 256), batch_size=10)
     print(len(train_datasets))
     for b_image, b_mask in train_datasets:
         t1 = time.time()
