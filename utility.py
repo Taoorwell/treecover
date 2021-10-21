@@ -16,9 +16,9 @@ def load_path(path, mode):
     idx = np.random.permutation(length)
     train_idx, test_idx = idx[:-30], idx[-30:]
     if mode == 'train':
-        idx = train_idx[:int(0.9 * len(train_idx))]
+        idx = train_idx[:280]
     elif mode == 'valid':
-        idx = train_idx[int(0.9 * len(train_idx)):]
+        idx = train_idx[280:]
     else:
         idx = test_idx
     for i, p in enumerate(path):

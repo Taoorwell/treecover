@@ -7,12 +7,19 @@ if __name__ == '__main__':
     path = load_path(path=path, mode='train')
     print(len(path), len(path[0]), len(path[1]), len(path[2]))
     for image_path, high_mask_path, low_mask_path in zip(path[0], path[1], path[2]):
+        # a = image_path.split('_')[-1]
+        # b = high_mask_path.split('_')[-1]
+        # c = low_mask_path.split('_')[-1]
+        # if a == b == c:
+        #     print('it is fine')
+        # else:
+        #     print('warning!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         image_id = image_path.split('_')[-1].split('.')[0]
         image = get_image(image_path)
         high_mask = get_image(high_mask_path)
         low_mask = get_image(low_mask_path)
 
-        figure, axs = plt.subplots(nrows=1, ncols=3, figsize=(15, 9))
+        figure, axs = plt.subplots(nrows=1, ncols=3)
         ax1 = axs.flat[0]
         ax1.imshow(image[:, :, :3])
         ax1.set_xlabel('Image_{}'.format(image_id))
@@ -34,5 +41,5 @@ if __name__ == '__main__':
         ax3.set_yticks([])
 
         plt.show()
-
+        #
         # time.sleep(1)

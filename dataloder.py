@@ -109,6 +109,7 @@ def dataset(path, mode, image_shape, batch_size):
 
     image_path = [images_path[i] for i in idx]
     mask_path = [masks_path[i] for i in idx]
+    image_id = [im.split('_')[-1].split('.')[0] for im in image_path]
     # for im, ms in zip(image_path, mask_path):
     #     print(im, ms)
     # creat path datasets using tf.data.Dataset
@@ -168,11 +169,11 @@ def dataset(path, mode, image_shape, batch_size):
     datasets = datasets.prefetch(AUTOTUNE)
     datasets = datasets.with_options(options)
     # datasets = datasets.repeat()
-    return datasets
+    return datasets, image_id
 
 
 if __name__ == '__main__':
-    train_datasets = dataset(path=r'../quality/low/', mode='test', image_shape=(256, 256), batch_size=10)
+    train_datasets, _ = dataset(path=r'../quality/high/', mode='test', image_shape=(256, 256), batch_size=10)
     print(len(train_datasets))
     for b_image, b_mask in train_datasets:
         t1 = time.time()
