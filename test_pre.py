@@ -237,11 +237,11 @@ if __name__ == '__main__':
     model_1.load_weights('checkpoints/ckpt-unet_rec_res_att_300_low')
 
     model_2 = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
-    model_2.load_weights('checkpoints/ckpt-unet_rec_res_att_300_high')
+    model_2.load_weights('checkpoints/ckpt-unet_rec_res_att_500_high')
 
     # Image loading for further prediction
     # large_image = get_image(raster_path=image_path)
-    dataset, image_id = dataset(path=r'../quality/high/', mode='test', image_shape=(256, 256), batch_size=1)
+    dataset, image_id = dataset(path=r'../quality/high/', mode='train', image_shape=(256, 256), batch_size=1)
     acc1, acc2 = [], []
     for (im, ms), i in zip(dataset, image_id):
         # print(im.shape, ms.shape)
@@ -309,8 +309,9 @@ if __name__ == '__main__':
         # Write out prediction to Tif file with coordinates
         # write_geotiff(output_path, output, image_path)
         # break
-        print('Writing out finish!')
+        # print('Writing out finish!')
     df = pd.DataFrame({'N': image_id, 'Low': acc1, 'High': acc2})
+    # df = pd.DataFrame({'N': image_id, 'High': acc2})
     df.to_excel('../results/r.xlsx')
 
 

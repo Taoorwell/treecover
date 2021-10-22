@@ -7,23 +7,23 @@ def iou(y_true, y_pred):
     # y_true and y_pred shape: batch_size, image_width, image_width, 1 or none.
     # reduce_sum and axis [1, 2], get each image accuracy.
     y_true = tf.cast(y_true, tf.float32)
-    numerator = tf.reduce_sum(y_true * y_pred, [1, 2])
-    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
+    numerator = tf.reduce_sum(y_true * y_pred)
+    denominator = tf.reduce_sum(y_true + y_pred)
     return numerator / (denominator - numerator)
 
 
 def dice(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
-    numerator = 2 * tf.reduce_sum(y_true * y_pred, [1, 2])
-    denominator = tf.reduce_sum(y_true + y_pred, [1, 2])
+    numerator = 2 * tf.reduce_sum(y_true * y_pred)
+    denominator = tf.reduce_sum(y_true + y_pred)
     return numerator / denominator
 
 
 def tversky(y_true, y_pred, beta=0.99):
     y_true = tf.cast(y_true, tf.float32)
-    numerator = tf.reduce_sum(y_true * y_pred, [1, 2])
-    denominator = numerator + beta * tf.reduce_sum((1 - y_true) * y_pred, [1, 2]) \
-                  + (1 - beta) * tf.reduce_sum(y_true * (1 - y_pred), [1, 2])
+    numerator = tf.reduce_sum(y_true * y_pred)
+    denominator = numerator + beta * tf.reduce_sum((1 - y_true) * y_pred) \
+                  + (1 - beta) * tf.reduce_sum(y_true * (1 - y_pred))
 
     return numerator / denominator
 
@@ -50,7 +50,7 @@ def cross_entropy(y_true, y_pred, weight=False):
     loss = tf.expand_dims(bce, axis=-1)
     if weight:
         loss = log_conv(y_true) * loss
-    return tf.reduce_mean(loss, [1, 2])
+    return tf.reduce_mean(loss)
 
 
 # weight map generating by LoG filter convolution
@@ -104,11 +104,12 @@ def combined_log_loss(y_true, y_pred, weight=True):
 
 
 if __name__ == '__main__':
-    a = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32))
-    b = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32))
+    a = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32)) * 0
+    b = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32)) * 0
 
-    final_loss = combined_log_loss(a, b, weight=True)
-    print(final_loss)
+    ce = cross_entropy(a, b)
+    # final_loss = combined_log_loss(a, b, weight=False)
+    print(ce)
     # combined = combined_loss(a, b)
     # combined_1 = combined_log_loss(a, b)
     # print(tf.reduce_mean(combined), combined_1)

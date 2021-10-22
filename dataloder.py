@@ -120,11 +120,11 @@ def dataset(path, mode, image_shape, batch_size):
     def parse_function(x, y):
         def parse(x, y):
             x1, y1 = x.decode(), y.decode()
-            x2, y2 = get_image(x1), get_image(y1)
+            x2, y2 = get_image(x1), tf.one_hot(get_image(y1)[:, :, 0], 2)
             return x2, y2
         x3, y3 = tf.numpy_function(parse, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape((333, 333, 7))
-        y3.set_shape((333, 333, 1))
+        y3.set_shape((333, 333, 2))
         return x3, y3
 
     @tf.autograph.experimental.do_not_convert
@@ -141,7 +141,7 @@ def dataset(path, mode, image_shape, batch_size):
             return x2, y2
         x3, y3 = tf.numpy_function(augment, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape(image_shape + (7,))
-        y3.set_shape(image_shape + (1,))
+        y3.set_shape(image_shape + (2,))
         return x3, y3
 
     @tf.autograph.experimental.do_not_convert
@@ -155,7 +155,7 @@ def dataset(path, mode, image_shape, batch_size):
             return x2, y2
         x3, y3 = tf.numpy_function(augment, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape(image_shape + (7,))
-        y3.set_shape(image_shape + (1,))
+        y3.set_shape(image_shape + (2,))
         return x3, y3
 
     datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
@@ -181,27 +181,28 @@ if __name__ == '__main__':
         t2 = time.time()
         t = t2 - t1
         print('time consume: {:.4f}'.format(t))
-        # b_weight_map = log_conv(b_mask)[0, :, :, 0]
-        # print(b_weight_map.shape)
-        b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
-        plt.subplot(1, 2, 1)
-        plt.imshow(b_im)
-        plt.xticks([])
-        plt.yticks([])
-        plt.xlabel('image')
-
-        plt.subplot(1, 2, 2)
-        plt.imshow(b_ms)
-        plt.xticks([])
-        plt.yticks([])
-        plt.xlabel('mask')
-
-        # plt.subplot(1, 3, 3)
-        # plt.imshow(b_weight_map)
+        break
+        # # b_weight_map = log_conv(b_mask)[0, :, :, 0]
+        # # print(b_weight_map.shape)
+        # b_im, b_ms = b_image[0, :, :, :3], b_mask[0, :, :, 0]
+        # plt.subplot(1, 2, 1)
+        # plt.imshow(b_im)
         # plt.xticks([])
         # plt.yticks([])
-        # plt.xlabel('weight map')
-
-        plt.show()
+        # plt.xlabel('image')
+        #
+        # plt.subplot(1, 2, 2)
+        # plt.imshow(b_ms)
+        # plt.xticks([])
+        # plt.yticks([])
+        # plt.xlabel('mask')
+        #
+        # # plt.subplot(1, 3, 3)
+        # # plt.imshow(b_weight_map)
+        # # plt.xticks([])
+        # # plt.yticks([])
+        # # plt.xlabel('weight map')
+        #
+        # plt.show()
 #         # break
 

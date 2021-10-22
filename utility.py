@@ -102,6 +102,7 @@ palette = {0: (255, 255, 255),  # White
            15: (165, 42, 42),
            16: (175, 238, 238)}
 
-# if __name__ == '__main__':
-#     image_path, mask_path = load_data(path='../', mode='train')
-#     print(len(image_path))
+if __name__ == '__main__':
+    path = r'../quality/high/mask_1.tif'
+    mask_1 = get_image(path)
+    print(mask_1.shape)
