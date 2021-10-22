@@ -30,13 +30,13 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # model = build_res_unet(input_shape=(width, width, 7))
-        model = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
+        model = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=True, residual=True, attention=True)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou])
     model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_rec_res_att_300_low',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_rec_res_att_300_softmax',
                                                            histogram_freq=1)
 
     model.fit(train_datasets,
@@ -46,4 +46,4 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-unet_rec_res_att_300_low')
+    model.save_weights('checkpoints/ckpt-unet_rec_res_att_300_softmax')
