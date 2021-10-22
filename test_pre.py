@@ -233,15 +233,15 @@ if __name__ == '__main__':
     # output_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0_pre.tif'
     # Trained Model loading
     # model = build_res_unet(input_shape=(width, width, 7))
-    model_1 = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
-    model_1.load_weights('checkpoints/ckpt-unet_rec_res_att_300_low')
+    model_1 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=True, residual=True, attention=True)
+    model_1.load_weights('checkpoints/ckpt-unet_rec_res_att_300_softmax_low')
 
-    model_2 = U_Net(input_shape=(width, width, 7), n_classes=1, recurrent=True, residual=True, attention=True)
-    model_2.load_weights('checkpoints/ckpt-unet_rec_res_att_500_high')
+    model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=True, residual=True, attention=True)
+    model_2.load_weights('checkpoints/ckpt-unet_rec_res_att_300_softmax')
 
     # Image loading for further prediction
     # large_image = get_image(raster_path=image_path)
-    dataset, image_id = dataset(path=r'../quality/high/', mode='train', image_shape=(256, 256), batch_size=1)
+    dataset, image_id = dataset(path=r'../quality/high/', mode='test', image_shape=(256, 256), batch_size=1)
     acc1, acc2 = [], []
     for (im, ms), i in zip(dataset, image_id):
         # print(im.shape, ms.shape)
@@ -251,7 +251,7 @@ if __name__ == '__main__':
         output_1, _ = predict_on_array(model=model_1,
                                        arr=image_arr[0],
                                        in_shape=(256, 256, 7),
-                                       out_bands=1,
+                                       out_bands=2,
                                        stride=200,
                                        batchsize=20,
                                        augmentation=True,
@@ -261,7 +261,7 @@ if __name__ == '__main__':
         output_2, _ = predict_on_array(model=model_2,
                                        arr=image_arr[0],
                                        in_shape=(256, 256, 7),
-                                       out_bands=1,
+                                       out_bands=2,
                                        stride=200,
                                        batchsize=20,
                                        augmentation=True,
@@ -270,49 +270,49 @@ if __name__ == '__main__':
         # output_1 = (output_1 > 0.5) * 1
         acc_iou_1 = iou(mask_arr[0], output_1)
         acc1.append(acc_iou_1)
-        output_1 = (output_1 > 0.5) * 1
+        # output_1 = (output_1 > 0.5) * 1
 
         # output_2 = (output_2 > 0.5) * 1
         acc_iou_2 = iou(mask_arr[0], output_2)
         acc2.append(acc_iou_2)
-        output_2 = (output_2 > 0.5) * 1
+        # output_2 = np.argmax(output_2, axis=-1)
 
         # Display the results
-        # plt.subplot(141)
-        # plt.imshow(image_arr[0, :, :, :3])
-        # plt.xlabel('image_{}'.format(int(i)))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.subplot(141)
+        plt.imshow(image_arr[0, :, :, :3])
+        plt.xlabel('image_{}'.format(int(i)))
+        plt.xticks([])
+        plt.yticks([])
         #
-        # plt.subplot(142)
-        # plt.imshow(rgb_mask(mask_arr[0, :, :, 0]))
-        # plt.xlabel('mask_{}'.format(int(i)))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.subplot(142)
+        plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
+        plt.xlabel('mask_{}'.format(int(i)))
+        plt.xticks([])
+        plt.yticks([])
         #
-        # plt.subplot(143)
-        # plt.imshow(rgb_mask(output_1[:, :, 0]))
-        # plt.xlabel('mask_pre_low')
-        # plt.title('Iou:{:.2%}'.format(acc_iou_1))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.subplot(143)
+        plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
+        plt.xlabel('mask_pre_low')
+        plt.title('Iou:{:.2%}'.format(acc_iou_1))
+        plt.xticks([])
+        plt.yticks([])
         #
-        # plt.subplot(144)
-        # plt.imshow(rgb_mask(output_2[:, :, 0]))
-        # plt.xlabel('mask_pre_high')
-        # plt.title('Iou:{:.2%}'.format(acc_iou_2))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.subplot(144)
+        plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
+        plt.xlabel('mask_pre_high')
+        plt.title('Iou:{:.2%}'.format(acc_iou_2))
+        plt.xticks([])
+        plt.yticks([])
         #
-        # plt.savefig('../results/fig/image_{}'.format(int(i)))
-        # plt.show()
+        plt.savefig('../results/fig2/image_{}'.format(int(i)))
+        plt.show()
         # Write out prediction to Tif file with coordinates
         # write_geotiff(output_path, output, image_path)
         # break
         # print('Writing out finish!')
     df = pd.DataFrame({'N': image_id, 'Low': acc1, 'High': acc2})
-    # df = pd.DataFrame({'N': image_id, 'High': acc2})
-    df.to_excel('../results/r.xlsx')
+    # # df = pd.DataFrame({'N': image_id, 'High': acc2})
+    df.to_excel('../results/r2.xlsx')
 
 
 
