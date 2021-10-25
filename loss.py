@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-
-
+from utility import get_image, rgb_mask
+import matplotlib.pyplot as plt
 # Metrics-accuracy
 eps = 1e-10
 
@@ -9,26 +9,27 @@ eps = 1e-10
 def iou(y_true, y_pred):
     # y_true and y_pred shape: batch_size, image_width, image_width, 1 or none.
     # reduce_sum and axis [1, 2], get each image accuracy.
-    y_true = tf.cast(y_true, tf.float32)
+    # y_true = tf.cast(y_true, tf.float32)
     numerator = tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
-    return numerator + eps / (denominator - numerator) + eps
+    return (numerator + eps) / (denominator - numerator + eps)
 
 
 def dice(y_true, y_pred):
-    y_true = tf.cast(y_true, tf.float32)
+    # y_true = tf.cast(y_true, tf.float32)
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
+    # denominator = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
     return (numerator + eps) / (denominator + eps)
 
 
 def tversky(y_true, y_pred, beta=0.99):
-    y_true = tf.cast(y_true, tf.float32)
+    # y_true = tf.cast(y_true, tf.float32)
     numerator = tf.reduce_sum(y_true * y_pred)
     denominator = numerator + beta * tf.reduce_sum((1 - y_true) * y_pred) \
                   + (1 - beta) * tf.reduce_sum(y_true * (1 - y_pred))
 
-    return (numerator + + eps) / (denominator + eps)
+    return (numerator + eps) / (denominator + eps)
 
 
 def tversky_loss(y_true, y_pred):
@@ -46,8 +47,8 @@ def dice_loss(y_true, y_pred):
 
 
 def cross_entropy(y_true, y_pred, weight=False):
-    y_true = tf.cast(y_true, tf.float32)
-    bce_func = tf.keras.losses.BinaryCrossentropy(from_logits=True,
+    # y_true = tf.cast(y_true, tf.float32)
+    bce_func = tf.keras.losses.BinaryCrossentropy(from_logits=False,
                                                   reduction=tf.keras.losses.Reduction.NONE)
     bce = bce_func(y_true, y_pred)  # no reduction shape: (batch_size, width, width), pixel level
     loss = tf.expand_dims(bce, axis=-1)
@@ -106,12 +107,49 @@ def combined_log_loss(y_true, y_pred, weight=False):
 
 
 if __name__ == '__main__':
-    a = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32)) * 0
-    b = tf.sigmoid(tf.random.normal((4, 50, 50, 1), 0, 1, dtype=tf.float32)) * 0
+    # 39, 8, 137, 62
+    n = 62
+    path = r'loss/'
+    # for sigmoid single band output
+    mask_39 = get_image(path + 'mask_{}.tif'.format(n))
+    mask_39_1 = get_image(path + 'mask_{}_1.tif'.format(n))
+    mask_39_2 = get_image(path + 'mask_{}_2.tif'.format(n))
 
-    ce = cross_entropy(a, b)
+    # for softmax double band output
+    mask_39 = np.eye(2)[np.array(mask_39[:, :, 0], np.int32)]
+    mask_39_1 = np.eye(2)[np.array(mask_39_1[:, :, 0], np.int32)]
+    mask_39_2 = np.eye(2)[np.array(mask_39_2[:, :, 0], np.int32)]
+
+    # accuracy computing
+    acc1 = iou(mask_39, mask_39_1)
+    acc2 = iou(mask_39, mask_39_2)
+
+    # loss computing
+    loss_1 = combined_log_loss(mask_39, mask_39_1)
+    loss_2 = combined_log_loss(mask_39, mask_39_2)
+
+    plt.subplot(131)
+    plt.imshow(rgb_mask(mask_39[:, :, -1]))
+    plt.xlabel('True mask')
+    plt.xticks([])
+    plt.yticks([])
+
+    plt.subplot(132)
+    plt.imshow(rgb_mask(mask_39_1[:, :, -1]))
+    plt.xlabel('Prediction 1')
+    plt.title('Iou:{:.2%}\nloss:{:.4f}'.format(acc1, loss_1))
+    plt.xticks([])
+    plt.yticks([])
+
+    plt.subplot(133)
+    plt.imshow(rgb_mask(mask_39_2[:, :, -1]))
+    plt.xlabel('Prediction 2')
+    plt.title('Iou:{:.2%}\nloss:{:.4f}'.format(acc2, loss_2))
+    plt.xticks([])
+    plt.yticks([])
+
+    plt.show()
     # final_loss = combined_log_loss(a, b, weight=False)
-    print(ce)
     # combined = combined_loss(a, b)
     # combined_1 = combined_log_loss(a, b)
     # print(tf.reduce_mean(combined), combined_1)
