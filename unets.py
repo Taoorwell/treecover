@@ -15,12 +15,14 @@ def conv_block(x, n_filters, filter_size, dropout, recurrent=False, residual=Fal
     """
 
     def conv_b_a(x_, re=recurrent):
-        conv_ = Conv2D(n_filters, (filter_size, filter_size), padding='same')(x_)
+        conv_op = Conv2D(n_filters, (filter_size, filter_size), padding='same')
+        conv_ = conv_op(x_)
         conv_ = BatchNormalization()(conv_)
         conv_ = Activation('relu')(conv_)
         if re is True:
             conv_ = add([x_, conv_])
-            conv_ = conv_b_a(conv_, re=False)
+            conv_ = conv_op(conv_)
+            #conv_ = conv_b_a(conv_, re=False)
         return conv_
 
     if recurrent is True:

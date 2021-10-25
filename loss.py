@@ -3,20 +3,23 @@ import numpy as np
 
 
 # Metrics-accuracy
+eps = 1e-10
+
+
 def iou(y_true, y_pred):
     # y_true and y_pred shape: batch_size, image_width, image_width, 1 or none.
     # reduce_sum and axis [1, 2], get each image accuracy.
     y_true = tf.cast(y_true, tf.float32)
     numerator = tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
-    return numerator / (denominator - numerator)
+    return numerator + eps / (denominator - numerator) + eps
 
 
 def dice(y_true, y_pred):
     y_true = tf.cast(y_true, tf.float32)
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
-    return numerator / denominator
+    return (numerator + eps) / (denominator + eps)
 
 
 def tversky(y_true, y_pred, beta=0.99):
@@ -25,7 +28,7 @@ def tversky(y_true, y_pred, beta=0.99):
     denominator = numerator + beta * tf.reduce_sum((1 - y_true) * y_pred) \
                   + (1 - beta) * tf.reduce_sum(y_true * (1 - y_pred))
 
-    return numerator / denominator
+    return (numerator + + eps) / (denominator + eps)
 
 
 def tversky_loss(y_true, y_pred):
@@ -98,7 +101,6 @@ def combined_loss(y_true, y_pred, weight=False):
 
 # combine cross entropy and logarithm of iou
 def combined_log_loss(y_true, y_pred, weight=False):
-    eps = 1E-15
     loss = cross_entropy(y_true, y_pred, weight=weight) - tf.math.log(iou(y_true, y_pred) + eps)
     return loss
 

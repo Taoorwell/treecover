@@ -88,7 +88,7 @@ from matplotlib import pyplot as plt
 #         return images, masks
 
 
-def dataset(path, mode, image_shape, batch_size):
+def dataset(path, mode, image_shape, batch_size, n_classes=1, seed=1):
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -97,7 +97,7 @@ def dataset(path, mode, image_shape, batch_size):
     images_path = sorted(glob(os.path.join(r'../quality/', r"images/*.tif")))
     masks_path = sorted(glob(os.path.join(path, '*.tif')))
     length = len(images_path)
-    np.random.seed(1)
+    np.random.seed(seed)
     idx = np.random.permutation(length)
     train_idx, test_idx = idx[:-30], idx[-30:]
     if mode == 'train':
@@ -120,12 +120,16 @@ def dataset(path, mode, image_shape, batch_size):
     def parse_function(x, y):
         def parse(x, y):
             x1, y1 = x.decode(), y.decode()
-            x2, y2 = get_image(x1), tf.one_hot(get_image(y1)[:, :, 0], 2)
+            x2, y2 = get_image(x1), get_image(y1)
             return x2, y2
         x3, y3 = tf.numpy_function(parse, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape((333, 333, 7))
-        y3.set_shape((333, 333, 2))
+        y3.set_shape((333, 333, 1))
         return x3, y3
+
+    @tf.autograph.experimental.do_not_convert
+    def one_hot(x, y):
+        return x, tf.one_hot(tf.cast(tf.reshape(y, (333, 333)), dtype=tf.int32), 2)
 
     @tf.autograph.experimental.do_not_convert
     def augment_function(x, y):
@@ -159,6 +163,9 @@ def dataset(path, mode, image_shape, batch_size):
         return x3, y3
 
     datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
+    if n_classes == 2:
+        datasets = datasets.map(one_hot, num_parallel_calls=AUTOTUNE)
+
     if mode == 'train':
         datasets = datasets.map(augment_function, num_parallel_calls=AUTOTUNE)
     elif mode == 'valid':
@@ -173,7 +180,12 @@ def dataset(path, mode, image_shape, batch_size):
 
 
 if __name__ == '__main__':
-    train_datasets, _ = dataset(path=r'../quality/high/', mode='test', image_shape=(256, 256), batch_size=10)
+    train_datasets, _ = dataset(path=r'../quality/high/',
+                                mode='valid',
+                                image_shape=(256, 256),
+                                batch_size=10,
+                                n_classes=2,
+                                seed=1)
     print(len(train_datasets))
     for b_image, b_mask in train_datasets:
         t1 = time.time()
