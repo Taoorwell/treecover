@@ -145,7 +145,7 @@ def dataset(path, mode, image_shape, batch_size, n_classes=1, seed=1):
             return x2, y2
         x3, y3 = tf.numpy_function(augment, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape(image_shape + (7,))
-        y3.set_shape(image_shape + (2,))
+        y3.set_shape(image_shape + (n_classes,))
         return x3, y3
 
     @tf.autograph.experimental.do_not_convert
@@ -159,7 +159,7 @@ def dataset(path, mode, image_shape, batch_size, n_classes=1, seed=1):
             return x2, y2
         x3, y3 = tf.numpy_function(augment, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape(image_shape + (7,))
-        y3.set_shape(image_shape + (2,))
+        y3.set_shape(image_shape + (n_classes,))
         return x3, y3
 
     datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
