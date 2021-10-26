@@ -3,6 +3,14 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, Drop
     add, Input, MaxPool2D, UpSampling2D, concatenate, multiply
 
 
+# Monte Carlo dropout
+def MC_dropout(rate, mc=False):
+    if mc is True:
+        return Dropout(rate, training=True)
+    else:
+        return Dropout(rate)
+
+
 def conv_block(x, n_filters, filter_size, dropout, recurrent=False, residual=False):
     """
     :param x: input tensor, like (256, 256, 7)

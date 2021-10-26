@@ -18,8 +18,10 @@ def iou(y_true, y_pred):
 def dice(y_true, y_pred):
     # y_true = tf.cast(y_true, tf.float32)
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
+    #numerator = 2 * tf.reduce_sum(y_true == (y_pred >= 0.5))
     # denominator = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
+    # return numerator / denominator
     return (numerator + eps) / (denominator + eps)
 
 
@@ -55,6 +57,12 @@ def cross_entropy(y_true, y_pred, weight=False):
     if weight:
         loss = log_conv(y_true) * loss
     return tf.reduce_mean(loss)
+
+
+def categorical_cross_entropy(y_true, y_pred):
+    cce_func = tf.keras.losses.CategoricalCrossentropy()
+    cce = cce_func(y_true, y_pred)
+    return cce
 
 
 # weight map generating by LoG filter convolution
@@ -107,48 +115,58 @@ def combined_log_loss(y_true, y_pred, weight=False):
 
 
 if __name__ == '__main__':
-    # 39, 8, 137, 62
-    n = 62
-    path = r'loss/'
-    # for sigmoid single band output
-    mask_39 = get_image(path + 'mask_{}.tif'.format(n))
-    mask_39_1 = get_image(path + 'mask_{}_1.tif'.format(n))
-    mask_39_2 = get_image(path + 'mask_{}_2.tif'.format(n))
+    y_true_2 = tf.constant([[1, 0], [0, 1]], dtype=tf.float32)
+    y_pre_2 = tf.constant([[.8, .2], [.2, .8]], dtype=tf.float32)
+    cce1 = cross_entropy(y_true_2, y_pre_2)
+    print(cce1)
 
-    # for softmax double band output
-    mask_39 = np.eye(2)[np.array(mask_39[:, :, 0], np.int32)]
-    mask_39_1 = np.eye(2)[np.array(mask_39_1[:, :, 0], np.int32)]
-    mask_39_2 = np.eye(2)[np.array(mask_39_2[:, :, 0], np.int32)]
+    y_true_1 = tf.constant([[1, 0]], dtype=tf.float32)
+    y_pre_1 = tf.constant([[.8, .2]], dtype=tf.float32)
+    ce = cross_entropy(y_true_1, y_pre_1)
+    print(ce)
 
-    # accuracy computing
-    acc1 = iou(mask_39, mask_39_1)
-    acc2 = iou(mask_39, mask_39_2)
-
-    # loss computing
-    loss_1 = combined_log_loss(mask_39, mask_39_1)
-    loss_2 = combined_log_loss(mask_39, mask_39_2)
-
-    plt.subplot(131)
-    plt.imshow(rgb_mask(mask_39[:, :, -1]))
-    plt.xlabel('True mask')
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.subplot(132)
-    plt.imshow(rgb_mask(mask_39_1[:, :, -1]))
-    plt.xlabel('Prediction 1')
-    plt.title('Iou:{:.2%}\nloss:{:.4f}'.format(acc1, loss_1))
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.subplot(133)
-    plt.imshow(rgb_mask(mask_39_2[:, :, -1]))
-    plt.xlabel('Prediction 2')
-    plt.title('Iou:{:.2%}\nloss:{:.4f}'.format(acc2, loss_2))
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.show()
+    # # 39, 8, 137, 62
+    # n = 137
+    # path = r'loss/'
+    # # for sigmoid single band output
+    # mask_39 = get_image(path + 'mask_{}.tif'.format(n))
+    # mask_39_1 = get_image(path + 'mask_{}_1.tif'.format(n))
+    # mask_39_2 = get_image(path + 'mask_{}_2.tif'.format(n))
+    #
+    # # for softmax double band output
+    # # mask_39 = np.eye(2)[np.array(mask_39[:, :, 0], np.int32)]
+    # # mask_39_1 = np.eye(2)[np.array(mask_39_1[:, :, 0], np.int32)]
+    # # mask_39_2 = np.eye(2)[np.array(mask_39_2[:, :, 0], np.int32)]
+    #
+    # # accuracy computing
+    # acc1 = iou(mask_39, mask_39_1)
+    # acc2 = iou(mask_39, mask_39_2)
+    #
+    # # loss computing
+    # loss_1 = dice_loss(mask_39, mask_39_1)
+    # loss_2 = dice_loss(mask_39, mask_39_2)
+    #
+    # plt.subplot(131)
+    # plt.imshow(rgb_mask(mask_39[:, :, -1]))
+    # plt.xlabel('True mask')
+    # plt.xticks([])
+    # plt.yticks([])
+    #
+    # plt.subplot(132)
+    # plt.imshow(rgb_mask(mask_39_1[:, :, -1]))
+    # plt.xlabel('Prediction 1')
+    # plt.title('Iou:{:.2%}\nloss:{:.4f}'.format(acc1, loss_1))
+    # plt.xticks([])
+    # plt.yticks([])
+    #
+    # plt.subplot(133)
+    # plt.imshow(rgb_mask(mask_39_2[:, :, -1]))
+    # plt.xlabel('Prediction 2')
+    # plt.title('Iou:{:.2%}\nloss:{:.4f}'.format(acc2, loss_2))
+    # plt.xticks([])
+    # plt.yticks([])
+    #
+    # plt.show()
     # final_loss = combined_log_loss(a, b, weight=False)
     # combined = combined_loss(a, b)
     # combined_1 = combined_log_loss(a, b)
