@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, Drop
 
 
 # Monte Carlo dropout
-def MC_dropout(rate, mc=False):
+def mc_dropout(rate, mc=False):
     if mc is True:
         return Dropout(rate, training=True)
     else:
@@ -30,7 +30,7 @@ def conv_block(x, n_filters, filter_size, dropout, recurrent=False, residual=Fal
         if re is True:
             conv_ = add([x_, conv_])
             conv_ = conv_op(conv_)
-            #conv_ = conv_b_a(conv_, re=False)
+            # conv_ = conv_b_a(conv_, re=False)
         return conv_
 
     if recurrent is True:

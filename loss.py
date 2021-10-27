@@ -15,10 +15,21 @@ def iou(y_true, y_pred):
     return (numerator + eps) / (denominator - numerator + eps)
 
 
+def tree_iou(y_true, y_pred):
+    y_true = y_true[..., 1]
+    y_pred = y_pred[..., 1]
+    # y_true and y_pred shape: batch_size, image_width, image_width, 1 or none.
+    # reduce_sum and axis [1, 2], get each image accuracy.
+    # y_true = tf.cast(y_true, tf.float32)
+    numerator = tf.reduce_sum(y_true * y_pred)
+    denominator = tf.reduce_sum(y_true + y_pred)
+    return (numerator + eps) / (denominator - numerator + eps)
+
+
 def dice(y_true, y_pred):
     # y_true = tf.cast(y_true, tf.float32)
     numerator = 2 * tf.reduce_sum(y_true * y_pred)
-    #numerator = 2 * tf.reduce_sum(y_true == (y_pred >= 0.5))
+    # numerator = 2 * tf.reduce_sum(y_true == (y_pred >= 0.5))
     # denominator = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred)
     denominator = tf.reduce_sum(y_true + y_pred)
     # return numerator / denominator
