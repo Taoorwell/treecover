@@ -233,15 +233,15 @@ if __name__ == '__main__':
     # output_path = r'../large_scale/subplots/2020_m2/2020_m2_1/2020_11_north_urban_m2_1_0_pre.tif'
     # Trained Model loading
     # model = build_res_unet(input_shape=(width, width, 7))
-    model_1 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=True, residual=True, attention=True)
-    model_1.load_weights('checkpoints/ckpt-unet_rec_res_att_300_softmax_low')
+    model_1 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
+    model_1.load_weights('checkpoints/ckpt-unet_res_softmax_dice_loss_low')
 
-    model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=True, residual=True, attention=True)
-    model_2.load_weights('checkpoints/ckpt-unet_rec_res_att_300_softmax')
+    model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
+    model_2.load_weights('checkpoints/ckpt-unet_res_softmax_dice')
 
     # Image loading for further prediction
     # large_image = get_image(raster_path=image_path)
-    dataset, image_id = dataset(path=r'../quality/high/', mode='test', image_shape=(256, 256), batch_size=1)
+    dataset, image_id = dataset(path=r'../quality/high/', mode='test', image_shape=(256, 256), batch_size=1, n_classes=2)
     acc1, acc2 = [], []
     for (im, ms), i in zip(dataset, image_id):
         # print(im.shape, ms.shape)
@@ -268,51 +268,55 @@ if __name__ == '__main__':
                                        verbose=False,
                                        report_time=True)
         # output_1 = (output_1 > 0.5) * 1
-        acc_iou_1 = iou(mask_arr[0], output_1)
+        acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
         acc1.append(acc_iou_1)
         # output_1 = (output_1 > 0.5) * 1
 
         # output_2 = (output_2 > 0.5) * 1
-        acc_iou_2 = iou(mask_arr[0], output_2)
+        acc_iou_2 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
         acc2.append(acc_iou_2)
         # output_2 = np.argmax(output_2, axis=-1)
 
         # Display the results
-        plt.subplot(141)
-        plt.imshow(image_arr[0, :, :, :3])
-        plt.xlabel('image_{}'.format(int(i)))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(141)
+        # plt.imshow(image_arr[0, :, :, :3])
+        # plt.xlabel('image_{}'.format(int(i)))
+        # plt.xticks([])
+        # plt.yticks([])
         #
-        plt.subplot(142)
-        plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
-        plt.xlabel('mask_{}'.format(int(i)))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(142)
+        # plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
+        # plt.xlabel('mask_{}'.format(int(i)))
+        # plt.xticks([])
+        # plt.yticks([])
         #
-        plt.subplot(143)
-        plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
-        plt.xlabel('mask_pre_low')
-        plt.title('Iou:{:.2%}'.format(acc_iou_1))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(143)
+        # plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
+        # plt.xlabel('mask_pre_low')
+        # plt.title('Iou:{:.2%}'.format(acc_iou_1))
+        # plt.xticks([])
+        # plt.yticks([])
         #
-        plt.subplot(144)
-        plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
-        plt.xlabel('mask_pre_high')
-        plt.title('Iou:{:.2%}'.format(acc_iou_2))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(144)
+        # plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
+        # plt.xlabel('mask_pre_high')
+        # plt.title('Iou:{:.2%}'.format(acc_iou_2))
+        # plt.xticks([])
+        # plt.yticks([])
         #
-        plt.savefig('../results/fig2/image_{}'.format(int(i)))
-        plt.show()
+        # plt.savefig('../results/fig2/image_{}'.format(int(i)))
+        # plt.show()
         # Write out prediction to Tif file with coordinates
         # write_geotiff(output_path, output, image_path)
         # break
         # print('Writing out finish!')
+    # print(np.mean(acc1), np.mean(acc2))
+    # print(acc1, acc2)
     df = pd.DataFrame({'N': image_id, 'Low': acc1, 'High': acc2})
+    print(df)
+    print(np.mean(acc1), np.mean(acc2))
     # # df = pd.DataFrame({'N': image_id, 'High': acc2})
-    df.to_excel('../results/r2.xlsx')
+    # df.to_excel('../results/r2.xlsx')
 
 
 
