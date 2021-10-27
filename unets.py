@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, Drop
 # Monte Carlo dropout
 def mc_dropout(rate, mc=False):
     if mc is True:
-        return Dropout(rate, training=True)
+        return Dropout(rate, trainable=True)
     else:
         return Dropout(rate)
 
@@ -41,7 +41,8 @@ def conv_block(x, n_filters, filter_size, dropout, recurrent=False, residual=Fal
     conv = conv_b_a(conv, recurrent)
 
     if dropout > 0:
-        conv = Dropout(dropout)(conv)
+        # conv = Dropout(dropout)(conv)
+        conv = mc_dropout(dropout, mc=True)(conv)
 
     if residual is True:
         shortcut = Conv2D(n_filters, (1, 1), padding='same')(x)
@@ -72,8 +73,9 @@ def attention_block(x, g, n_filters):
     return x_att
 
 
-def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=False):
+def U_Net(input_shape, n_classes, dropout=0., recurrent=False, residual=False, attention=False):
     """
+    :param dropout: if larger 0, apply mc dropout with rate dropout
     :param input_shape: input tensor, image like (256, 256, 7)
     :param n_classes: output classes, binary here, 1
     :param recurrent: if True, recurrent once in convolution operation
@@ -85,33 +87,34 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
     # network structure parameters
     NUM_FILTER = [14, 28, 56, 112, 140]
     FILTER_SIZE = 3
+    # dropout = .5
 
     inputs = Input(input_shape, dtype=tf.float32)
 
     # encoder part
     # down 1
     down_conv_1 = conv_block(x=inputs, n_filters=NUM_FILTER[0], filter_size=FILTER_SIZE,
-                             dropout=0, recurrent=recurrent, residual=residual)
+                             dropout=dropout, recurrent=recurrent, residual=residual)
     down_pool_1 = MaxPool2D(pool_size=(2, 2))(down_conv_1)
 
     # down 2
     down_conv_2 = conv_block(x=down_pool_1, n_filters=NUM_FILTER[1], filter_size=FILTER_SIZE,
-                             dropout=0, recurrent=recurrent, residual=residual)
+                             dropout=dropout, recurrent=recurrent, residual=residual)
     down_pool_2 = MaxPool2D(pool_size=(2, 2))(down_conv_2)
 
     # down 3
     down_conv_3 = conv_block(x=down_pool_2, n_filters=NUM_FILTER[2], filter_size=FILTER_SIZE,
-                             dropout=0, recurrent=recurrent, residual=residual)
+                             dropout=dropout, recurrent=recurrent, residual=residual)
     down_pool_3 = MaxPool2D(pool_size=(2, 2))(down_conv_3)
 
     # down 4
     down_conv_4 = conv_block(x=down_pool_3, n_filters=NUM_FILTER[3], filter_size=FILTER_SIZE,
-                             dropout=0, recurrent=recurrent, residual=residual)
+                             dropout=dropout, recurrent=recurrent, residual=residual)
     down_pool_4 = MaxPool2D(pool_size=(2, 2))(down_conv_4)
 
     # bridge
     bridge_conv_5 = conv_block(x=down_pool_4, n_filters=NUM_FILTER[4], filter_size=FILTER_SIZE,
-                               dropout=0, recurrent=recurrent, residual=residual)
+                               dropout=dropout, recurrent=recurrent, residual=residual)
 
     # decoder part
     for i, down_conv in enumerate([down_conv_4, down_conv_3, down_conv_2, down_conv_1]):
@@ -120,7 +123,7 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
             down_conv = attention_block(down_conv, up, n_filters=NUM_FILTER[(3-i)])
         up = concatenate([up, down_conv], axis=-1)
         up = conv_block(x=up, n_filters=NUM_FILTER[(3-i)], filter_size=FILTER_SIZE,
-                        dropout=0, recurrent=recurrent, residual=residual)
+                        dropout=dropout, recurrent=recurrent, residual=residual)
         bridge_conv_5 = up
     # # up 4
     # up_4 = UpSampling2D(size=(2, 2))(bridge_conv_5)
@@ -159,7 +162,7 @@ def U_Net(input_shape, n_classes, recurrent=False, residual=False, attention=Fal
 
 
 if __name__ == '__main__':
-    unet = U_Net(input_shape=(256, 256, 7), n_classes=1, recurrent=True, residual=True, attention=True)
+    unet = U_Net(input_shape=(256, 256, 7), n_classes=1, dropout=.5, recurrent=True, residual=True, attention=True)
     unet.summary()
 
 

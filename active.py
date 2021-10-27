@@ -1,39 +1,77 @@
 import pandas as pd
 import numpy as np
 from loss import dice, iou
-from utility import load_path, get_image
+from dataloder import get_path, dataset
 from unets import U_Net
 from test_pre import predict_on_array
 
-width = 256
-path = [r'../quality/images', r'../quality/high/']
+if __name__ == '__main__':
+    # parameter define
+    width = 256
+    path = r'../quality/high'
+    n_inference = 10
 
-model = U_Net(input_shape=(256, 256, 7), n_classes=2, recurrent=True, residual=True, attention=True)
-model.load_weights(r'checkpoints/ckpt-unet_rec_res_att_300_softmax')
-print('model load successfully')
+    # trained model reload
+    model = U_Net(input_shape=(256, 256, 7), n_classes=2, recurrent=True, residual=True, attention=True)
+    model.load_weights(r'checkpoints/ckpt-unet_r2_att_softmax_dice_loss')
+    print('model load successfully')
 
-paths = load_path(path=path, mode='train')
-image_ids, accs = [], []
-for image_path, high_mask_path in zip(paths[0], paths[1]):
-    image_id = image_path.split('_')[-1].split('.')[0]
-    # print(image_id)
-    image_arr, mask_arr = get_image(image_path), get_image(high_mask_path)
-    mask_arr = np.eye(2)[np.array(mask_arr[:, :, 0], dtype=np.int32)]
-    # print(image_arr.shape, mask_arr.shape)
-    output, _ = predict_on_array(model=model,
-                                 arr=image_arr,
-                                 in_shape=(256, 256, 7),
-                                 out_bands=2,
-                                 stride=200,
-                                 batchsize=20,
-                                 augmentation=True,
-                                 verbose=False,
-                                 report_time=True)
-    acc = iou(mask_arr, output)
-    print(acc.numpy())
-    image_ids.append(image_id)
-    accs.append(acc.numpy())
-    print(image_id, 'predicted successfully')
-    # break
-df = pd.DataFrame({'ID': image_ids, 'Iou': accs})
-df.to_excel('../results/train_1.xlsx')
+    # datasets preparation
+    image_path_active1, mask_path_active1, image_id_active1 = get_path(path=path,
+                                                                       mode='train',
+                                                                       seed=1,
+                                                                       active=1)
+    active1_datasets = dataset(image_path_active1,
+                               mask_path_active1,
+                               mode='test',
+                               image_shape=(256, 256),
+                               batch_size=1,
+                               n_classes=2)
+
+    e1, e2, var = [], [], []
+    # model prediction
+    for image_arr, mask_arr in active1_datasets:
+        image_arr, mask_arr = image_arr[0], mask_arr[0]
+        print(image_arr.shape, mask_arr.shape)
+        outputs = np.zeros((n_inference, ) + mask_arr.shape, dtype=np.float32)
+        for i in range(n_inference):
+            output, _ = predict_on_array(model=model,
+                                         arr=image_arr,
+                                         in_shape=(256, 256, 7),
+                                         out_bands=2,
+                                         stride=200,
+                                         batchsize=20,
+                                         augmentation=True,
+                                         verbose=False,
+                                         report_time=True)
+            outputs[i] = output
+        # output prediction uncertainty estimation
+        # categorical first cross entropy
+        # first
+        a = outputs[..., 0] * np.log2(outputs[..., 0]) + outputs[..., 1] * np.log2(outputs[..., 1])
+        E1 = np.mean(a, axis=0)
+        print(E1.shape)
+        E1 = np.sum(E1)
+        print(E1)
+
+        # second
+        b1, b2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
+        E2 = b1 * np.log2(b1) + b2 * np.log2(b2)
+        print(E2.shape)
+        E2 = np.sum(E2)
+        print(E2)
+
+        # third
+        v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
+        v = v1 + v2
+        print(v.shape)
+        v = np.sum(v)
+        print(v)
+
+        e1.append(E1)
+        e2.append(E2)
+        var.append(v)
+        # break
+    df = pd.DataFrame({'ID': image_id_active1, 'Entropy1': e1, 'Entropy2': e2, 'Variance': var})
+    print(df)
+    # df.to_excel('../results/train_1.xlsx')
