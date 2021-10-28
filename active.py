@@ -42,24 +42,24 @@ if __name__ == '__main__':
                                          out_bands=2,
                                          stride=200,
                                          batchsize=20,
-                                         augmentation=True,
+                                         augmentation=False,
                                          verbose=False,
                                          report_time=True)
             outputs[i] = output
         # output prediction uncertainty estimation
         # categorical first cross entropy
         # first
-        a = outputs[..., 0] * np.log2(outputs[..., 0]+eps) + outputs[..., 1] * np.log2(outputs[..., 1]+eps)
+        a = -(outputs[..., 0] * np.log2(outputs[..., 0]+eps) + outputs[..., 1] * np.log2(outputs[..., 1]+eps))
         E1 = np.mean(a, axis=0)
         # print(E1.shape)
-        E1 = np.sum(E1)
+        E1 = np.mean(E1)
         # print(E1)
 
         # second
         b1, b2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
-        E2 = b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps)
+        E2 = -(b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps))
         # print(E2.shape)
-        E2 = np.sum(E2)
+        E2 = np.mean(E2)
         # print(E2)
 
         # third
