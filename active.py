@@ -10,10 +10,11 @@ if __name__ == '__main__':
     width = 256
     path = r'../quality/high'
     n_inference = 10
+    eps = 10e-10
 
     # trained model reload
-    model = U_Net(input_shape=(256, 256, 7), n_classes=2, recurrent=True, residual=True, attention=True)
-    model.load_weights(r'checkpoints/ckpt-unet_r2_att_softmax_dice_loss')
+    model = U_Net(input_shape=(256, 256, 7), n_classes=2, recurrent=False, residual=True, attention=False)
+    model.load_weights(r'checkpoints/ckpt-unet_res_softmax_dice_4_500')
     print('model load successfully')
 
     # datasets preparation
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     # model prediction
     for image_arr, mask_arr in active1_datasets:
         image_arr, mask_arr = image_arr[0], mask_arr[0]
-        print(image_arr.shape, mask_arr.shape)
+        # print(image_arr.shape, mask_arr.shape)
         outputs = np.zeros((n_inference, ) + mask_arr.shape, dtype=np.float32)
         for i in range(n_inference):
             output, _ = predict_on_array(model=model,
@@ -48,25 +49,25 @@ if __name__ == '__main__':
         # output prediction uncertainty estimation
         # categorical first cross entropy
         # first
-        a = outputs[..., 0] * np.log2(outputs[..., 0]) + outputs[..., 1] * np.log2(outputs[..., 1])
+        a = outputs[..., 0] * np.log2(outputs[..., 0]+eps) + outputs[..., 1] * np.log2(outputs[..., 1]+eps)
         E1 = np.mean(a, axis=0)
-        print(E1.shape)
+        # print(E1.shape)
         E1 = np.sum(E1)
-        print(E1)
+        # print(E1)
 
         # second
         b1, b2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
-        E2 = b1 * np.log2(b1) + b2 * np.log2(b2)
-        print(E2.shape)
+        E2 = b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps)
+        # print(E2.shape)
         E2 = np.sum(E2)
-        print(E2)
+        # print(E2)
 
         # third
         v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
         v = v1 + v2
-        print(v.shape)
+        # print(v.shape)
         v = np.sum(v)
-        print(v)
+        # print(v)
 
         e1.append(E1)
         e2.append(E2)
