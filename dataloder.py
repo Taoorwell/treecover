@@ -112,7 +112,7 @@ def get_path(path, mode='train', seed=1, active=0):
     return image_path, mask_path, image_id
 
 
-def dataset(image_path, mask_path, mode, image_shape, batch_size, n_classes=1):
+def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256), n_classes=2):
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -165,11 +165,10 @@ def dataset(image_path, mask_path, mode, image_shape, batch_size, n_classes=1):
         x3.set_shape(image_shape + (7,))
         y3.set_shape(image_shape + (n_classes,))
         return x3, y3
-
-    datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
+    if type(image_path[0]) == str:
+        datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
     if n_classes == 2:
         datasets = datasets.map(one_hot, num_parallel_calls=AUTOTUNE)
-
     if mode == 'train':
         datasets = datasets.map(augment_function, num_parallel_calls=AUTOTUNE)
     elif mode == 'valid':

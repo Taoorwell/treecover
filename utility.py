@@ -7,11 +7,9 @@ import scipy.io as sio
 
 
 def load_path(path, mode):
-    # train, valid, test: 235, 29, 30
-    path = [sorted(glob(p + '/*.tif')) for p in path]
-    # images_path = sorted(glob(os.path.join(path, "tiles_north/*.tif")))
-    # masks_path = sorted(glob(os.path.join(path, "masks_north/*.tif")))
-    length = len(path[1])
+    # train, valid, test: 280, 20, 30
+    paths = [sorted(glob(p + '/*.tif')) for p in path]
+    length = len(paths[1])
     np.random.seed(1)
     idx = np.random.permutation(length)
     train_idx, test_idx = idx[:-30], idx[-30:]
@@ -21,7 +19,7 @@ def load_path(path, mode):
         idx = train_idx[280:]
     else:
         idx = test_idx
-    for i, p in enumerate(path):
+    for i, p in enumerate(paths):
         path[i] = [p[i] for i in idx]
     return path
 
