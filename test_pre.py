@@ -235,8 +235,8 @@ if __name__ == '__main__':
     model_1 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
     model_1.load_weights('checkpoints/ckpt-unet_res_softmax_dice_4_500')
 
-    model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=True, residual=True, attention=True)
-    model_2.load_weights('checkpoints/ckpt-unet_r2_att_softmax_dice_4_500')
+    model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
+    model_2.load_weights('checkpoints/ckpt-unet_res_active1')
 
     # Image loading for further prediction
     image_path_test, mask_path_test, image_id_test = get_path(path=path,
@@ -291,33 +291,33 @@ if __name__ == '__main__':
         # output_2 = np.argmax(output_2, axis=-1)
 
         # Display the results
-        plt.subplot(141)
-        plt.imshow(image_arr[0, :, :, :3])
-        plt.xlabel('image_{}'.format(int(i)))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(141)
+        # plt.imshow(image_arr[0, :, :, :3])
+        # plt.xlabel('image_{}'.format(int(i)))
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.subplot(142)
-        plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
-        plt.xlabel('mask_{}'.format(int(i)))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(142)
+        # plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
+        # plt.xlabel('mask_{}'.format(int(i)))
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.subplot(143)
-        plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
-        plt.xlabel('mask_pre_low')
-        plt.title('T_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_1, acc_iou_2))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(143)
+        # plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
+        # plt.xlabel('mask_pre_low')
+        # plt.title('T_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_1, acc_iou_2))
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.subplot(144)
-        plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
-        plt.xlabel('mask_pre_high')
-        plt.title('T_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_3, acc_iou_4))
-        plt.xticks([])
-        plt.yticks([])
+        # plt.subplot(144)
+        # plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
+        # plt.xlabel('mask_pre_high')
+        # plt.title('T_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_3, acc_iou_4))
+        # plt.xticks([])
+        #plt.yticks([])
         # plt.savefig('../results/fig2/image_{}'.format(int(i)))
-        plt.show()
+        # plt.show()
         # Write out prediction to Tif file with coordinates
         # write_geotiff(output_path, output, image_path)
         # break
@@ -327,8 +327,8 @@ if __name__ == '__main__':
     df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2, 'tree_iou2': acc3, 'o_iou2': acc4})
     print(df)
     print(np.mean(acc1), np.mean(acc2), np.mean(acc3), np.mean(acc4))
-    with pd.ExcelWriter(r'../results/r3.xlsx') as writer:
-        df.to_excel(writer, sheet_name='r2t-res-softmax-dice')
+    # with pd.ExcelWriter(r'../results/r3.xlsx') as writer:
+    #    df.to_excel(writer, sheet_name='r2t-res-softmax-dice')
     # # df = pd.DataFrame({'N': image_id, 'High': acc2})
     # df.to_excel('../results/r2.xlsx')
 

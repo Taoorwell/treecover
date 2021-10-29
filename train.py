@@ -10,7 +10,7 @@ if __name__ == '__main__':
     n_classes = 2
     train_batch_size = 4
     valid_batch_size = 10
-    epochs = 500
+    epochs = 300
     initial_learning_rate = 0.0001
     loss_fn = combined_loss
 
@@ -42,13 +42,13 @@ if __name__ == '__main__':
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # model = build_res_unet(input_shape=(width, width, 7))
-        model = U_Net(input_shape=(width, width, 7), n_classes=n_classes, recurrent=True, residual=True, attention=True)
+        model = U_Net(input_shape=(width, width, 7), n_classes=n_classes, recurrent=False, residual=False, attention=False)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
     model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_r2_att_softmax_cb_4_500',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_softmax_4_300_high',
                                                            histogram_freq=1)
 
     model.fit(train_datasets,
@@ -58,4 +58,4 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-unet_r2_att_softmax_cb_4_500')
+    model.save_weights('checkpoints/ckpt-unet_softmax_4_300_high')

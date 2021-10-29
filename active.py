@@ -17,7 +17,7 @@ if __name__ == '__main__':
     n_inference = 10
     eps = 10e-10
     initial_learning_rate = 0.0001
-    epochs = 100
+    epochs = 200
     # validation datasets always
     image_path_valid, mask_path_valid, image_i_valid = get_path(path=path,
                                                                 mode='valid',
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/unet_res_active1',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_res_active1',
                                                            histogram_freq=1)
     print('active seed model training')
     model.fit(active1_datasets,
@@ -76,7 +76,7 @@ if __name__ == '__main__':
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
     # model.save('model.h5')
-    model.save_weights('checkpoints/ckpt-unet_res_active1')
+    model.save_weights('checkpoints/active/ckpt-unet_res_active1')
     # model.load_weights(r'checkpoints/ckpt-unet_res_softmax_dice_4_500')
     print('active seed model save successfully')
 
@@ -91,6 +91,7 @@ if __name__ == '__main__':
                                image_shape=(256, 256),
                                batch_size=1,
                                n_classes=2)
+    print(len(image_id_active2), image_id_active2)
     print('Uncertainty prediction')
 
     e1, e2, var = [], [], []
@@ -137,6 +138,6 @@ if __name__ == '__main__':
         e2.append(E2)
         var.append(v)
         # break
-    df = pd.DataFrame({'ID': image_id_active1, 'Entropy1': e1, 'Entropy2': e2, 'Variance': var})
+    df = pd.DataFrame({'ID': image_id_active2, 'Entropy1': e1, 'Entropy2': e2, 'Variance': var})
     print(df)
     # df.to_excel('../results/train_1.xlsx')
