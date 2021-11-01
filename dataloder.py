@@ -112,7 +112,7 @@ def get_path(path, mode='train', seed=1, active=0):
     return image_path, mask_path, image_id
 
 
-def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256), n_classes=2):
+def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -128,12 +128,8 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256), n_c
             return x2, y2
         x3, y3 = tf.numpy_function(parse, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape((333, 333, 7))
-        y3.set_shape((333, 333, 1))
+        y3.set_shape((333, 333, 2))
         return x3, y3
-
-    @tf.autograph.experimental.do_not_convert
-    def one_hot(x, y):
-        return x, tf.one_hot(tf.cast(tf.reshape(y, (333, 333)), dtype=tf.int32), 2)
 
     @tf.autograph.experimental.do_not_convert
     def augment_function(x, y):
@@ -149,7 +145,7 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256), n_c
             return x2, y2
         x3, y3 = tf.numpy_function(augment, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape(image_shape + (7,))
-        y3.set_shape(image_shape + (n_classes,))
+        y3.set_shape(image_shape + (2,))
         return x3, y3
 
     @tf.autograph.experimental.do_not_convert
@@ -163,12 +159,10 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256), n_c
             return x2, y2
         x3, y3 = tf.numpy_function(augment, inp=(x, y), Tout=[tf.float32, tf.float32])
         x3.set_shape(image_shape + (7,))
-        y3.set_shape(image_shape + (n_classes,))
+        y3.set_shape(image_shape + (2,))
         return x3, y3
     if type(image_path[0]) == str:
         datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
-    if n_classes == 2:
-        datasets = datasets.map(one_hot, num_parallel_calls=AUTOTUNE)
     if mode == 'train':
         datasets = datasets.map(augment_function, num_parallel_calls=AUTOTUNE)
     elif mode == 'valid':

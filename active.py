@@ -7,12 +7,15 @@ from loss import dice_loss, iou, tree_iou
 from dataloder import get_path, get_image, dataset
 from unets import U_Net
 from test_pre import predict_on_array
+
+# some parameters
 seed = 2
 path = r'../quality/high'
 initial_learning_rate = 0.0001
 epochs = 200
 n_classes = 2
 loss_fn = dice_loss
+
 # initial datasets, validation and test datasets
 initial_path_dataset = get_path(path=path,
                                 mode='train',
@@ -47,7 +50,7 @@ test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', 
 
 
 # initial_dataset training for model 1
-def initial_model_train(n):
+def initial_model_train():
     optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
 
     def lr_cosine_decay(e):
@@ -64,7 +67,7 @@ def initial_model_train(n):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_active_{}'.format(n),
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_active_1',
                                                            histogram_freq=1)
 
     model.fit(initial_dataset,
@@ -74,7 +77,7 @@ def initial_model_train(n):
               validation_steps=len(validation_dataset),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
 
-    model.save_weights('checkpoints/active/ckpt-unet_active_{}'.format(n))
+    model.save_weights('checkpoints/active/ckpt-unet_active_1')
     return model
 
 
@@ -154,6 +157,8 @@ def model_pred(model, images, masks, inf, n, delta):
     # uncertain_list = np.column_stack((index, entropy1, entropy2, variance))
     # uncertain_list = uncertain_list[uncertain_list[:, 1].argsort()]
     high_confidence_index = entropy1 < delta
+    print(f'number of high: {len(high_confidence_index)}, '
+          f'high confidence index:{high_confidence_index}')
     masks[high_confidence_index] = prob[high_confidence_index]
     return images, masks
 

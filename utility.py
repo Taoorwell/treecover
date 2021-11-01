@@ -30,7 +30,10 @@ def get_image(raster_path):
     for b in range(1, ds.RasterCount + 1):
         band = ds.GetRasterBand(b).ReadAsArray()
         image[:, :, b-1] = band
-    if image.shape[-1] > 1:
+    if image.shape[-1] == 1:
+        image = image[:, :, 0].astype(int)
+        image = np.eye(2)[image]
+    else:
         image = norma_data(image, norma_methods='min-max')
     return image
 
