@@ -193,34 +193,34 @@ if __name__ == '__main__':
     active2_dataset_image, active2_dataset_mask = get_active_image_mask_array_list(active2_path_dataset)
     print(f'new active datasets loading successfully')
 
-    model = initial_model_train()
+    # model = initial_model_train()
 
     # trained model loading
-    # initial_model = U_Net(input_shape=(256, 256, 7), dropout=.5, n_classes=n_classes, residual=True)
-    # initial_model.load_weights(r'checkpoints/active/ckpt-unet_res_active1')
-    # initial_model.summary()
-    # print('model loaded successfully')
-    # # model test
-    # # model_test(initial_model, test_dataset, inf=10)
-    # # model prediction on active2 datasets
-    # images, masks, prob, image_id_selected = model_pred(initial_model,
-    #                                                     active2_dataset_image,
-    #                                                     active2_dataset_mask,
-    #                                                     active2_path_dataset[2],
-    #                                                     3,
-    #                                                     0.05)
-    # for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
-    #     fig, axs = plt.subplots(1, 3, figsize=(10, 5))
-    #     axs[0].imshow(im[:, :, :3])
-    #     axs[0].set_xlabel(f'image_{ids}')
-    #
-    #     axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
-    #     axs[1].set_xlabel(f'mask_{ids}')
-    #
-    #     axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
-    #     axs[2].set_xlabel(f'prob_{ids}')
-    #     axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
-    #     plt.show()
+    initial_model = U_Net(input_shape=(256, 256, 7), dropout=0.9, n_classes=n_classes, residual=True)
+    initial_model.load_weights(r'checkpoints/active/ckpt-unet_active_1')
+    initial_model.summary()
+    print('model loaded successfully')
+    # model test
+    # model_test(initial_model, test_dataset, inf=10)
+    # model prediction on active2 datasets
+    images, masks, prob, image_id_selected = model_pred(initial_model,
+                                                        active2_dataset_image,
+                                                        active2_dataset_mask,
+                                                        active2_path_dataset[2],
+                                                        5,
+                                                        0.08)
+    for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
+        fig, axs = plt.subplots(1, 3, figsize=(10, 5))
+        axs[0].imshow(im[:, :, :3])
+        axs[0].set_xlabel(f'image_{ids}')
+
+        axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
+        axs[1].set_xlabel(f'mask_{ids}')
+
+        axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
+        axs[2].set_xlabel(f'prob_{ids}')
+        axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
+        plt.show()
 
 # if __name__ == '__main__':
 #     # parameter define

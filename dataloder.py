@@ -178,15 +178,14 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
 
 if __name__ == '__main__':
     image_path, mask_path, image_i = get_path(path=r'../quality/high',
-                                              mode='train',
-                                              seed=1,
-                                              active=1)
+                                              mode='valid',
+                                              seed=2,
+                                              active=0)
     train_datasets = dataset(image_path=image_path,
                              mask_path=mask_path,
                              mode='test',
                              image_shape=(256, 256),
-                             batch_size=1,
-                             n_classes=2)
+                             batch_size=1)
 
     print(len(train_datasets))
     for b_image, b_mask in train_datasets:
