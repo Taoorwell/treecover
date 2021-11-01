@@ -33,6 +33,7 @@ def get_image(raster_path):
     if image.shape[-1] == 1:
         image = image[:, :, 0].astype(int)
         image = np.eye(2)[image]
+        image = image.astype(np.float32)
     else:
         image = norma_data(image, norma_methods='min-max')
     return image

@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt
 
 
 def iou(y_true, y_pred):
-    # y_true and y_pred shape: batch_size, image_width, image_width, 1 or none.
-    # reduce_sum and axis [1, 2], get each image accuracy.
     numerator = np.sum(y_true * y_pred)
     denominator = np.sum(y_true + y_pred)
     return numerator / (denominator - numerator)
@@ -230,25 +228,26 @@ if __name__ == '__main__':
     # Parameter define
     path = r'../quality/high/'
     width, height = 256, 256
+    seed = 2
 
     # Trained Model loading
     model_1 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
-    model_1.load_weights('checkpoints/ckpt-unet_res_softmax_4_300_high')
+    model_1.load_weights('checkpoints/2/ckpt-unet_res_low_2')
 
     model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
-    model_2.load_weights('checkpoints/2710/ckpt-unet_res_softmax_dice')
+    model_2.load_weights('checkpoints/2/ckpt-unet_res_high_2')
 
     # Image loading for further prediction
     image_path_test, mask_path_test, image_id_test = get_path(path=path,
                                                               mode='test',
-                                                              seed=1,
+                                                              seed=seed,
                                                               active=0)
     dataset = dataset(image_path_test,
                       mask_path_test,
                       mode='test',
                       image_shape=(256, 256),
                       batch_size=1,
-                      n_classes=2)
+                      )
 
     acc1, acc2, acc3, acc4 = [], [], [], []
     for (im, ms), i in zip(dataset, image_id_test):
@@ -327,8 +326,8 @@ if __name__ == '__main__':
     df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2, 'tree_iou2': acc3, 'o_iou2': acc4})
     print(df)
     print(np.mean(acc1), np.mean(acc2), np.mean(acc3), np.mean(acc4))
-    with pd.ExcelWriter(r'../results/r3.xlsx', mode='a') as writer:
-        df.to_excel(writer, sheet_name='res-res-high')
+    with pd.ExcelWriter(r'../results/r.xlsx', mode='a') as writer:
+        df.to_excel(writer, sheet_name='res-low-high')
     # # df = pd.DataFrame({'N': image_id, 'High': acc2})
     # df.to_excel('../results/r2.xlsx')
 

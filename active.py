@@ -1,52 +1,26 @@
 # import math
+from utility import rgb_mask
+import matplotlib.pyplot as plt
 import pandas as pd
 import tensorflow as tf
 # import pandas as pd
 import numpy as np
-from loss import dice_loss, iou, tree_iou
+from loss import dice_loss, tree_iou
 from dataloder import get_path, get_image, dataset
 from unets import U_Net
 from test_pre import predict_on_array
 
-# some parameters
-seed = 2
-path = r'../quality/high'
-initial_learning_rate = 0.0001
-epochs = 200
-n_classes = 2
-loss_fn = dice_loss
 
-# initial datasets, validation and test datasets
-initial_path_dataset = get_path(path=path,
-                                mode='train',
-                                seed=seed,
-                                active=1)
-
-validation_path_dataset = get_path(path=path,
-                                   mode='valid',
-                                   seed=seed,
-                                   active=0)
-
-test_path_dataset = get_path(path=path,
-                             mode='test',
-                             seed=seed,
-                             active=0)
-
-print(len(initial_path_dataset[2]))
+def iou(y_true, y_pred):
+    numerator = np.sum(y_true * y_pred)
+    denominator = np.sum(y_true + y_pred)
+    return numerator / (denominator - numerator)
 
 
 def get_active_image_mask_array_list(path_dataset):
-    active_dataset_image, active_dataset_mask = list(map(get_image, path_dataset[0])),\
-                                                list(map(get_image, path_dataset[1]))
+    active_dataset_image, active_dataset_mask = np.array(list(map(get_image, path_dataset[0]))),\
+                                                np.array(list(map(get_image, path_dataset[1])))
     return active_dataset_image, active_dataset_mask
-
-
-# initial, validation and test tensorflow datasets
-initial_dataset_image, initial_dataset_mask = get_active_image_mask_array_list(initial_path_dataset)
-
-initial_dataset = dataset(initial_dataset_image, initial_dataset_mask, mode='train', batch_size=4)
-validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=10)
-test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
 
 
 # initial_dataset training for model 1
@@ -81,46 +55,39 @@ def initial_model_train():
     return model
 
 
-def model_test(model, dataset, inf, n):
+def model_test(model, dataset, inf):
     acc1, acc2 = [], []
     for (im, ms), i in zip(dataset, test_path_dataset[2]):
         image_arr, mask_arr = im.numpy(), ms.numpy()
+        # print(image_arr.shape, type(image_arr))
         outputs = np.zeros((inf, ) + mask_arr[0].shape, dtype=np.float32)
         for i in range(inf):
-            output_1, _ = predict_on_array(model=model,
-                                           arr=image_arr[0],
-                                           in_shape=(256, 256, 7),
-                                           out_bands=2,
-                                           stride=200,
-                                           batchsize=20,
-                                           augmentation=True)
+            output_1 = predict_on_array(model=model,
+                                        arr=image_arr[0],
+                                        in_shape=(256, 256, 7),
+                                        out_bands=2,
+                                        stride=200,
+                                        batchsize=20,
+                                        augmentation=True)
             outputs[i] = output_1
-        output_1 = np.mean(outputs, axis=0)
-        acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
-        acc_iou_2 = iou(mask_arr[0], output_1)
+        # print(outputs.shape)
+        outputs = np.mean(outputs, axis=0)
+        # print(outputs.shape)
+        acc_iou_1 = iou(mask_arr[0][:, :, 1], outputs[:, :, 1])
+        acc_iou_2 = iou(mask_arr[0], outputs)
         acc1.append(acc_iou_1)
         acc2.append(acc_iou_2)
 
     df = pd.DataFrame({'N': test_path_dataset[2],
                        'tree_iou': acc1,
-                       'o_iou': acc2,
-                       'tree_iou_mean': np.mean(acc1),
-                       'o_iou_mean': np.mean(acc2)})
+                       'o_iou': acc2})
     print(df)
     print(np.mean(acc1), np.mean(acc2))
-    with pd.ExcelWriter(r'../results/active.xlsx', mode='a') as writer:
-        df.to_excel(writer, sheet_name='active_{}'.format(n))
+    with pd.ExcelWriter(r'../results/r.xlsx', mode='a') as writer:
+        df.to_excel(writer, sheet_name='active_1')
 
 
-# Get active 2 path dataset
-active2_path_dataset = get_path(path=path,
-                                mode='train',
-                                seed=seed,
-                                active=2)
-active2_dataset_image, active2_dataset_mask = get_active_image_mask_array_list(active2_path_dataset)
-
-
-def model_pred(model, images, masks, inf, n, delta):
+def model_pred(model, images, masks, images_id, inf, delta):
     def uncertainty(outputs):
         eps = 1e-15
         # first
@@ -128,43 +95,132 @@ def model_pred(model, images, masks, inf, n, delta):
         E1 = np.mean(a, axis=0)
         E1 = np.mean(E1)
         # second
-        b1, b2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
-        E2 = -(b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps))
-        E2 = np.mean(E2)
-        # third
-        v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
-        v = v1 + v2
-        v = np.sum(v)
-        return E1, E2, v
+        # b1, b2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
+        # E2 = -(b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps))
+        # E2 = np.mean(E2)
+        # # third
+        # v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
+        # v = v1 + v2
+        # v = np.sum(v)
+        return E1
 
-    prob, entropy1, entropy2, variance = [], [], [], []
-    for im in images:
+    prob, entropy1 = [], []
+    for im, ms, ids in zip(images, masks, images_id):
         outputs = np.zeros((inf,) + im.shape[:-1] + (2,), dtype=np.float32)
         for i in range(inf):
-            mask_prob, _ = predict_on_array(model=model,
-                                            arr=im,
-                                            in_shape=(256, 256, 7),
-                                            out_bands=2,
-                                            stride=200,
-                                            batchsize=20)
+            mask_prob = predict_on_array(model=model,
+                                         arr=im,
+                                         in_shape=(256, 256, 7),
+                                         out_bands=2,
+                                         stride=100,
+                                         batchsize=20)
             outputs[i] = mask_prob
-        e1, e2, v = uncertainty(outputs=outputs)
+        e1 = uncertainty(outputs=outputs)
+        # plt.subplot(131)
+        # plt.imshow(im[:, :, :3])
+        # plt.xlabel(f'image_{ids}')
+        #
+        # plt.subplot(132)
+        # plt.imshow(rgb_mask(np.argmax(ms, axis=-1)))
+        # plt.xlabel(f'mask_{ids}')
+        #
+        # plt.subplot(133)
+        # plt.imshow(rgb_mask(np.argmax((np.mean(outputs, axis=0) > 0.5) * 1, axis=-1)))
+        # plt.title(f'Entropy:{e1}')
+        #
+        # plt.show()
         entropy1.append(e1)
-        entropy2.append(e2)
-        variance.append(v)
+        # entropy2.append(e2)
+        # variance.append(v)
         prob.append((np.mean(outputs, axis=0) > 0.5) * 1)
-    # index = np.arange(0, len(prob))
-    # uncertain_list = np.column_stack((index, entropy1, entropy2, variance))
-    # uncertain_list = uncertain_list[uncertain_list[:, 1].argsort()]
-    high_confidence_index = entropy1 < delta
-    print(f'number of high: {len(high_confidence_index)}, '
-          f'high confidence index:{high_confidence_index}')
-    masks[high_confidence_index] = prob[high_confidence_index]
-    return images, masks
+
+    df = pd.DataFrame({'Image_id': images_id,
+                       'Entropy1': entropy1})
+    print(df)
+    image_id_selected = np.array(images_id)[np.array(entropy1) < delta]
+    print(f'number of high: {len(image_id_selected)}, '
+          f'high confidence index:{image_id_selected}')
+    # replace mask from model prediction
+    # masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
+    # plot something
+    return images, masks, prob, image_id_selected
 
 # put new images and masks with previous datasets together.
 
-# if __name__ == '__main__':
+
+if __name__ == '__main__':
+    # some parameters
+    seed = 2
+    path = r'../quality/high'
+    initial_learning_rate = 0.0001
+    epochs = 200
+    n_classes = 2
+    loss_fn = dice_loss
+
+    # initial datasets, validation and test datasets
+    initial_path_dataset = get_path(path=path,
+                                    mode='train',
+                                    seed=seed,
+                                    active=1)
+
+    validation_path_dataset = get_path(path=path,
+                                       mode='valid',
+                                       seed=seed,
+                                       active=0)
+
+    test_path_dataset = get_path(path=path,
+                                 mode='test',
+                                 seed=seed,
+                                 active=0)
+
+    print(f'initial datasets length: {len(initial_path_dataset[2])}')
+    print('initial datasets id:')
+    print(initial_path_dataset[-1])
+
+    # initial, validation and test tensorflow datasets
+    initial_dataset_image, initial_dataset_mask = get_active_image_mask_array_list(initial_path_dataset)
+    print(f'initial dataset image and mask loading successfully')
+
+    initial_dataset = dataset(initial_dataset_image, initial_dataset_mask, mode='train', batch_size=4)
+    validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=10)
+    test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
+    print(f'initial, validation and test tensorflow datasets loading successfully')
+    # Get active 2 path dataset
+    active2_path_dataset = get_path(path=path,
+                                    mode='train',
+                                    seed=seed,
+                                    active=2)
+    active2_dataset_image, active2_dataset_mask = get_active_image_mask_array_list(active2_path_dataset)
+    print(f'new active datasets loading successfully')
+
+    model = initial_model_train()
+
+    # trained model loading
+    # initial_model = U_Net(input_shape=(256, 256, 7), dropout=.5, n_classes=n_classes, residual=True)
+    # initial_model.load_weights(r'checkpoints/active/ckpt-unet_res_active1')
+    # initial_model.summary()
+    # print('model loaded successfully')
+    # # model test
+    # # model_test(initial_model, test_dataset, inf=10)
+    # # model prediction on active2 datasets
+    # images, masks, prob, image_id_selected = model_pred(initial_model,
+    #                                                     active2_dataset_image,
+    #                                                     active2_dataset_mask,
+    #                                                     active2_path_dataset[2],
+    #                                                     3,
+    #                                                     0.05)
+    # for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
+    #     fig, axs = plt.subplots(1, 3, figsize=(10, 5))
+    #     axs[0].imshow(im[:, :, :3])
+    #     axs[0].set_xlabel(f'image_{ids}')
+    #
+    #     axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
+    #     axs[1].set_xlabel(f'mask_{ids}')
+    #
+    #     axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
+    #     axs[2].set_xlabel(f'prob_{ids}')
+    #     axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
+    #     plt.show()
 
 # if __name__ == '__main__':
 #     # parameter define
