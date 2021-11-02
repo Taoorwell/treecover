@@ -4,11 +4,11 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, Drop
 
 
 # Monte Carlo dropout
-def mc_dropout(rate, mc=False):
+def mc_dropout(rate, x, mc=False):
     if mc is True:
-        return Dropout(rate, trainable=True)
+        return Dropout(rate)(x, training=True)
     else:
-        return Dropout(rate)
+        return Dropout(rate)(x)
 
 
 def conv_block(x, n_filters, filter_size, dropout, recurrent=False, residual=False):
@@ -42,7 +42,7 @@ def conv_block(x, n_filters, filter_size, dropout, recurrent=False, residual=Fal
 
     if dropout > 0:
         # conv = Dropout(dropout)(conv)
-        conv = mc_dropout(dropout, mc=True)(conv)
+        conv = mc_dropout(dropout, conv, mc=True)
 
     if residual is True:
         shortcut = Conv2D(n_filters, (1, 1), padding='same')(x)

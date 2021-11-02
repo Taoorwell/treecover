@@ -34,24 +34,25 @@ def initial_model_train():
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         # Monte Carlo Dropout
-        model = U_Net(input_shape=(256, 256, 7), dropout=.5, n_classes=n_classes, residual=True)
+        model = U_Net(input_shape=(256, 256, 7), dropout=.1, n_classes=n_classes, residual=True)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
     # model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_active_1',
-                                                           histogram_freq=1)
+    # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_active_1',
+    #                                                        histogram_freq=1)
 
     model.fit(initial_dataset,
               steps_per_epoch=len(initial_dataset),
               epochs=epochs,
               validation_data=validation_dataset,
               validation_steps=len(validation_dataset),
-              callbacks=[learning_rate_scheduler, tensorboard_callbacks])
+              callbacks=[learning_rate_scheduler])
 
-    model.save_weights('checkpoints/active/ckpt-unet_active_1')
+    # model.save_weights('checkpoints/active/ckpt-unet_active_1')
+    model.save(r'checkpoints/active/ckpt-unet_active_1.h5')
     return model
 
 
@@ -99,12 +100,12 @@ def model_pred(model, images, masks, images_id, inf, delta):
         # E2 = -(b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps))
         # E2 = np.mean(E2)
         # # third
-        # v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
-        # v = v1 + v2
-        # v = np.sum(v)
-        return E1
+        v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
+        v = v1 + v2
+        v = np.sum(v)
+        return E1, v
 
-    prob, entropy1 = [], []
+    prob, entropy1, variance = [], [], []
     for im, ms, ids in zip(images, masks, images_id):
         outputs = np.zeros((inf,) + im.shape[:-1] + (2,), dtype=np.float32)
         for i in range(inf):
@@ -115,7 +116,7 @@ def model_pred(model, images, masks, images_id, inf, delta):
                                          stride=100,
                                          batchsize=20)
             outputs[i] = mask_prob
-        e1 = uncertainty(outputs=outputs)
+        e1, v = uncertainty(outputs=outputs)
         # plt.subplot(131)
         # plt.imshow(im[:, :, :3])
         # plt.xlabel(f'image_{ids}')
@@ -131,11 +132,12 @@ def model_pred(model, images, masks, images_id, inf, delta):
         # plt.show()
         entropy1.append(e1)
         # entropy2.append(e2)
-        # variance.append(v)
+        variance.append(v)
         prob.append((np.mean(outputs, axis=0) > 0.5) * 1)
 
     df = pd.DataFrame({'Image_id': images_id,
-                       'Entropy1': entropy1})
+                       'Entropy1': entropy1,
+                       'Variance': variance})
     print(df)
     image_id_selected = np.array(images_id)[np.array(entropy1) < delta]
     print(f'number of high: {len(image_id_selected)}, '
@@ -182,7 +184,7 @@ if __name__ == '__main__':
     print(f'initial dataset image and mask loading successfully')
 
     initial_dataset = dataset(initial_dataset_image, initial_dataset_mask, mode='train', batch_size=4)
-    validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=10)
+    validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=1)
     test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
     print(f'initial, validation and test tensorflow datasets loading successfully')
     # Get active 2 path dataset
@@ -193,34 +195,50 @@ if __name__ == '__main__':
     active2_dataset_image, active2_dataset_mask = get_active_image_mask_array_list(active2_path_dataset)
     print(f'new active datasets loading successfully')
 
-    # model = initial_model_train()
+    model = initial_model_train()
 
     # trained model loading
-    initial_model = U_Net(input_shape=(256, 256, 7), dropout=0.9, n_classes=n_classes, residual=True)
-    initial_model.load_weights(r'checkpoints/active/ckpt-unet_active_1')
-    initial_model.summary()
-    print('model loaded successfully')
+    # initial_model = U_Net(input_shape=(256, 256, 7), dropout=0.9, n_classes=n_classes, residual=True)
+    # initial_model.load_weights(r'checkpoints/active/ckpt-unet_active_1')
+    # initial_model = tf.keras.models.load_model(r'checkpoints/active/unet_active_1.h5',
+    #                                            custom_objects={'dice_loss': dice_loss,
+    #                                                            'iou': iou,
+    #                                                            'tree_iou': tree_iou})
+    # initial_model.summary()
+    # print('model loaded successfully')
+    # # model validation part
+    # for im, ms in validation_dataset:
+    #     # print(im.shape)
+    #     outputs = np.zeros((10, ) + ms.shape[1:], dtype=np.float32)
+    #     for i in range(10):
+    #         output = initial_model.predict(x=im)
+    #         print(output[0, 0, 0, :])
+    #         outputs[i] = output
+    #     v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
+    #     v = v1 + v2
+    #     v = np.sum(v)
+    #     print(v)
     # model test
     # model_test(initial_model, test_dataset, inf=10)
     # model prediction on active2 datasets
-    images, masks, prob, image_id_selected = model_pred(initial_model,
-                                                        active2_dataset_image,
-                                                        active2_dataset_mask,
-                                                        active2_path_dataset[2],
-                                                        5,
-                                                        0.08)
-    for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
-        fig, axs = plt.subplots(1, 3, figsize=(10, 5))
-        axs[0].imshow(im[:, :, :3])
-        axs[0].set_xlabel(f'image_{ids}')
-
-        axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
-        axs[1].set_xlabel(f'mask_{ids}')
-
-        axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
-        axs[2].set_xlabel(f'prob_{ids}')
-        axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
-        plt.show()
+    # images, masks, prob, image_id_selected = model_pred(initial_model,
+    #                                                     active2_dataset_image,
+    #                                                     active2_dataset_mask,
+    #                                                     active2_path_dataset[2],
+    #                                                     3,
+    #                                                     0.05)
+    # for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
+    #     fig, axs = plt.subplots(1, 3, figsize=(10, 5))
+    #     axs[0].imshow(im[:, :, :3])
+    #     axs[0].set_xlabel(f'image_{ids}')
+    #
+    #     axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
+    #     axs[1].set_xlabel(f'mask_{ids}')
+    #
+    #     axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
+    #     axs[2].set_xlabel(f'prob_{ids}')
+    #     axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
+    #     plt.show()
 
 # if __name__ == '__main__':
 #     # parameter define
