@@ -1,18 +1,12 @@
+import tensorflow as tf
 from sys import stdout
 from dataloder import dataset, get_path
 from utility import rgb_mask
-# from utility import get_image, write_geotiff
-from unets import U_Net
 import time
 import numpy as np
 import pandas as pd
+from loss import dice_loss, iou, tree_iou
 from matplotlib import pyplot as plt
-
-
-def iou(y_true, y_pred):
-    numerator = np.sum(y_true * y_pred)
-    denominator = np.sum(y_true + y_pred)
-    return numerator / (denominator - numerator)
 
 
 def compute_pyramid_patch_weight_loss(width, height):
@@ -231,11 +225,13 @@ if __name__ == '__main__':
     seed = 2
 
     # Trained Model loading
-    model_1 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
-    model_1.load_weights('checkpoints/2/ckpt-unet_res_low_2')
+    model_1 = tf.keras.models.load_model(r'checkpoints/', custom_objects={'dice_loss': dice_loss,
+                                                                          'iou': iou,
+                                                                          'tree_iou': tree_iou})
 
-    model_2 = U_Net(input_shape=(width, width, 7), n_classes=2, recurrent=False, residual=True, attention=False)
-    model_2.load_weights('checkpoints/2/ckpt-unet_res_high_2')
+    model_2 = tf.keras.models.load_model(r'checkpoints/', custom_objects={'dice_loss': dice_loss,
+                                                                          'iou': iou,
+                                                                          'tree_iou': tree_iou})
 
     # Image loading for further prediction
     image_path_test, mask_path_test, image_id_test = get_path(path=path,
@@ -277,16 +273,16 @@ if __name__ == '__main__':
         # output_1 = (output_1 > 0.5) * 1
         acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
         acc_iou_2 = iou(mask_arr[0], output_1)
-        acc1.append(acc_iou_1)
-        acc2.append(acc_iou_2)
+        acc1.append(acc_iou_1.numpy())
+        acc2.append(acc_iou_2.numpy())
 
         # output_1 = (output_1 > 0.5) * 1
 
         # output_2 = (output_2 > 0.5) * 1
         acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
         acc_iou_4 = iou(mask_arr[0], output_2)
-        acc3.append(acc_iou_3)
-        acc4.append(acc_iou_4)
+        acc3.append(acc_iou_3.numpy())
+        acc4.append(acc_iou_4.numpy())
         # output_2 = np.argmax(output_2, axis=-1)
 
         # Display the results
@@ -327,7 +323,7 @@ if __name__ == '__main__':
     print(df)
     print(np.mean(acc1), np.mean(acc2), np.mean(acc3), np.mean(acc4))
     with pd.ExcelWriter(r'../results/r.xlsx', mode='a') as writer:
-        df.to_excel(writer, sheet_name='res-low-high')
+        df.to_excel(writer, sheet_name='drop-no-high')
     # # df = pd.DataFrame({'N': image_id, 'High': acc2})
     # df.to_excel('../results/r2.xlsx')
 

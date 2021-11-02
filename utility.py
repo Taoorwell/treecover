@@ -105,6 +105,13 @@ palette = {0: (255, 255, 255),  # White
            16: (175, 238, 238)}
 
 if __name__ == '__main__':
-    path = r'../quality/high/mask_15.tif'
-    mask_1 = get_image(path)
-    print(mask_1.shape)
+    path = r'../quality/low'
+    paths = sorted(glob(path + '/*.tif'))
+    print(paths[0])
+    print(len(paths))
+    for p in paths:
+        print(p.split('_')[-1])
+        mask = get_image(p)
+    # path = r'../quality/high/mask_15.tif'
+    # mask_1 = get_image(path)
+    # print(mask_1.shape)
