@@ -102,7 +102,7 @@ def model_pred(model, images, masks, images_id, inf, delta):
         # # third
         v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
         v = v1 + v2
-        v = np.sum(v)
+        v = np.mean(v)
         return E1, E2, v
 
     prob, entropy1, entropy2, variance = [], [], [], []
@@ -144,8 +144,7 @@ def model_pred(model, images, masks, images_id, inf, delta):
     print(f'number of high: {len(image_id_selected)}, '
           f'high confidence index:{image_id_selected}')
     # replace mask from model prediction
-    # masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
-    # plot something
+    masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
     return images, masks, prob, image_id_selected
 
 # put new images and masks with previous datasets together.
@@ -154,9 +153,9 @@ def model_pred(model, images, masks, images_id, inf, delta):
 if __name__ == '__main__':
     # some parameters
     seed = 2
-    path = r'../quality/high'
+    path = r'../quality/high/'
     initial_learning_rate = 0.0001
-    epochs = 200
+    epochs = 100
     n_classes = 2
     loss_fn = dice_loss
 
@@ -196,48 +195,65 @@ if __name__ == '__main__':
     active2_dataset_image, active2_dataset_mask = get_active_image_mask_array_list(active2_path_dataset)
     print(f'new active datasets loading successfully')
 
-    # model = initial_model_train()
+    model = initial_model_train()
 
     # trained model loading
     # initial_model = U_Net(input_shape=(256, 256, 7), dropout=0.9, n_classes=n_classes, residual=True)
     # initial_model.load_weights(r'checkpoints/active/ckpt-unet_active_1')
-    initial_model = tf.keras.models.load_model(r'checkpoints/active/ckpt-unet_active_1.h5',
-                                               custom_objects={'dice_loss': dice_loss,
-                                                               'iou': iou,
-                                                               'tree_iou': tree_iou})
-    initial_model.summary()
-    print('model loaded successfully')
-    # model validation part
-    # for im, ms in validation_dataset:
-    #     # print(im.shape)
-    #     outputs = np.zeros((10, ) + ms.shape[1:], dtype=np.float32)
-    #     for i in range(10):
-    #         output = initial_model.predict(x=im)
-    #         print(output[0, 0, 0, :])
-    #         outputs[i] = output
-    #     v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
-    #     v = v1 + v2
-    #     v = np.sum(v)
-    #     print(v)
-    # model test
-    # model_test(initial_model, test_dataset, inf=5)
-    # model prediction on active2 datasets
-    images, masks, prob, image_id_selected = model_pred(initial_model,
-                                                        active2_dataset_image,
-                                                        active2_dataset_mask,
-                                                        active2_path_dataset[2],
-                                                        10,
-                                                        0.07)
-    for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
-        fig, axs = plt.subplots(1, 3, figsize=(10, 5))
-        axs[0].imshow(im[:, :, :3])
-        axs[0].set_xlabel(f'image_{ids}')
+    # initial_model = tf.keras.models.load_model(r'checkpoints/active/ckpt-unet_active_1.h5',
+    #                                            custom_objects={'dice_loss': dice_loss,
+    #                                                            'iou': iou,
+    #                                                            'tree_iou': tree_iou})
+    # initial_model.summary()
+    # print('model loaded successfully')
+    # # model validation part
+    # # for im, ms in validation_dataset:
+    # #     # print(im.shape)
+    # #     outputs = np.zeros((10, ) + ms.shape[1:], dtype=np.float32)
+    # #     for i in range(10):
+    # #         output = initial_model.predict(x=im)
+    # #         print(output[0, 0, 0, :])
+    # #         outputs[i] = output
+    # #     v1, v2 = np.var(outputs[..., 0], axis=0), np.var(outputs[..., 1], axis=0)
+    # #     v = v1 + v2
+    # #     v = np.sum(v)
+    # #     print(v)
+    # # model test
+    # # model_test(initial_model, test_dataset, inf=5)
+    # # model prediction on active2 datasets
+    # images, masks, prob, image_id_selected = model_pred(initial_model,
+    #                                                     active2_dataset_image,
+    #                                                     active2_dataset_mask,
+    #                                                     active2_path_dataset[2],
+    #                                                     3,
+    #                                                     0.07)
+    # new_images = np.concatenate([initial_dataset_image, images], axis=0)
+    # new_masks = np.concatenate([initial_dataset_mask, masks], axis=0)
+    # new_dataset = dataset(new_images, new_masks, mode='train', batch_size=4)
 
-        axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
-        axs[1].set_xlabel(f'mask_{ids}')
+    # initial_model.fit(new_dataset,
+    #                   steps_per_epoch=len(initial_dataset),
+    #                   epochs=epochs,
+    #                   validation_data=validation_dataset,
+    #                   validation_steps=len(validation_dataset),
+    #                   callbacks=[learning_rate_scheduler])
 
-        axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
-        axs[2].set_xlabel(f'prob_{ids}')
-        axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
-        plt.show()
+    # model.save_weights('checkpoints/active/ckpt-unet_active_1')
+    initial_model.save(r'checkpoints/active/ckpt-unet_active_1.h5')
+    # for n_i, n_m in new_dataset:
+    #     print(n_i.shape, n_m.shape)
+    #     break
+
+    # for im, ms, p, ids in zip(images, masks, prob, active2_path_dataset[2]):
+    #     fig, axs = plt.subplots(1, 3, figsize=(10, 5))
+    #     axs[0].imshow(im[:, :, :3])
+    #     axs[0].set_xlabel(f'image_{ids}')
+    #
+    #     axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
+    #     axs[1].set_xlabel(f'mask_{ids}')
+    #
+    #     axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
+    #     axs[2].set_xlabel(f'prob_{ids}')
+    #     axs[2].set_title(f'model labeled' if ids in image_id_selected else f'drop')
+    #     plt.show()
 

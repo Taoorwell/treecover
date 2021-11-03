@@ -242,8 +242,7 @@ if __name__ == '__main__':
                       mask_path_test,
                       mode='test',
                       image_shape=(256, 256),
-                      batch_size=1,
-                      )
+                      batch_size=1)
 
     acc1, acc2, acc3, acc4 = [], [], [], []
     for (im, ms), i in zip(dataset, image_id_test):
