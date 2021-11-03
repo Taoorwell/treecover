@@ -237,7 +237,15 @@ if __name__ == '__main__':
 
         print(f'Re-train model...')
 
+        optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+        model = tf.keras.models.load_model(f'checkpoints/active/ckpt-unet_active_{i-1}.h5',
+                                           custom_objects={'dice_loss': dice_loss,
+                                                           'iou': iou,
+                                                           'tree_iou': tree_iou})
+        strategy = tf.distribute.MirroredStrategy()
+        with strategy.scope():
+            model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
         model.fit(new_dataset,
                   steps_per_epoch=len(new_dataset),
                   epochs=epochs,
