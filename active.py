@@ -190,7 +190,7 @@ if __name__ == '__main__':
     print(f'initial dataset image and mask loading successfully')
 
     initial_dataset = dataset(initial_dataset_image, initial_dataset_mask, mode='train', batch_size=4)
-    validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=1)
+    validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=10)
     test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
