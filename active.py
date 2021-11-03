@@ -76,8 +76,8 @@ def model_test(model, dataset, inf, n):
         # print(outputs.shape)
         acc_iou_1 = iou(mask_arr[0][:, :, 1], outputs[:, :, 1])
         acc_iou_2 = iou(mask_arr[0], outputs)
-        acc1.append(acc_iou_1)
-        acc2.append(acc_iou_2)
+        acc1.append(acc_iou_1.numpy())
+        acc2.append(acc_iou_2.numpy())
 
     df = pd.DataFrame({'N': test_path_dataset[2],
                        'tree_iou': acc1,
