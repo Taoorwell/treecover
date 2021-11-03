@@ -52,7 +52,7 @@ def initial_model_train():
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
                   callbacks=[learning_rate_scheduler])
-        model.save(r'checkpoints/active/ckpt-unet_active_1.h5')
+        model.save(r'checkpoints/active/unet_active_1.h5')
     return model
 
 
