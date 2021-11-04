@@ -12,10 +12,10 @@ from unets import U_Net
 from test_pre import predict_on_array
 
 
-def get_active_image_mask_array_list(path_dataset):
-    active_dataset_image, active_dataset_mask = np.array(list(map(get_image, path_dataset[0]))),\
-                                                np.array(list(map(get_image, path_dataset[1])))
-    return active_dataset_image, active_dataset_mask
+def get_active_image_mask_array_list(image_path, mask_path):
+    images, masks = np.array(list(map(get_image, image_path))),\
+                    np.array(list(map(get_image, mask_path)))
+    return images, masks
 
 
 # initial_dataset training for model 1
@@ -57,9 +57,9 @@ def initial_model_train(initial_dataset, validation_dataset):
     return model
 
 
-def model_test(model, test_dataset_images, test_dataset_masks, test_path_dataset, inf, n):
+def model_test(model, images, masks, images_ids, inf, n):
     acc1, acc2 = [], []
-    for im, ms in zip(test_dataset_images, test_dataset_masks):
+    for im, ms in zip(images, masks):
         image_arr, mask_arr = im, ms
         # print(image_arr.shape, type(image_arr))
         outputs = np.zeros((inf, ) + mask_arr.shape, dtype=np.float32)
@@ -80,7 +80,7 @@ def model_test(model, test_dataset_images, test_dataset_masks, test_path_dataset
         acc1.append(acc_iou_1.numpy())
         acc2.append(acc_iou_2.numpy())
 
-    df = pd.DataFrame({'N': test_path_dataset[2],
+    df = pd.DataFrame({'N': images_ids,
                        'tree_iou': acc1,
                        'o_iou': acc2})
     print(df)
@@ -91,7 +91,7 @@ def model_test(model, test_dataset_images, test_dataset_masks, test_path_dataset
     return mean_tree_iou, mean_o_iou
 
 
-def model_pred(model, images, masks, images_id, inf, delta):
+def model_pred(model, images, masks, images_ids, inf, delta):
     def uncertainty(outputs):
         eps = 1e-15
         # first
@@ -139,12 +139,12 @@ def model_pred(model, images, masks, images_id, inf, delta):
         variance.append(v)
         prob.append((np.mean(outputs, axis=0) > 0.5) * 1)
 
-    df = pd.DataFrame({'Image_id': images_id,
+    df = pd.DataFrame({'Image_id': images_ids,
                        'Entropy1': entropy1,
                        'Entropy2': entropy2,
                        'Variance': variance})
     print(df)
-    image_id_selected = np.array(images_id)[np.array(entropy1) < delta]
+    image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
     print(f'number of high: {len(image_id_selected)}, '
           f'high confidence index:{image_id_selected}')
     # replace mask from model prediction
@@ -167,33 +167,34 @@ if __name__ == '__main__':
     delta = 0.21
 
     # initial datasets, validation and test datasets
-    initial_path_dataset = get_path(path=path,
-                                    mode='train',
-                                    seed=seed,
-                                    active=1)
+    initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
+                                                                       mode='train',
+                                                                       seed=seed,
+                                                                       active=1)
 
-    validation_path_dataset = get_path(path=path,
-                                       mode='valid',
-                                       seed=seed,
-                                       active=0)
+    valid_image_path, valid_mask_path, valid_image_id = get_path(path=path,
+                                                                 mode='valid',
+                                                                 seed=seed,
+                                                                 active=0)
 
-    test_path_dataset = get_path(path=path,
-                                 mode='test',
-                                 seed=seed,
-                                 active=0)
+    test_image_path, test_mask_path, test_image_id = get_path(path=path,
+                                                              mode='test',
+                                                              seed=seed,
+                                                              active=0)
 
-    print(f'initial datasets length: {len(initial_path_dataset[2])}')
+    print(f'initial datasets length: {len(initial_image_id)}')
     print('initial datasets id:')
-    print(initial_path_dataset[-1])
+    print(initial_image_id)
 
     # initial, validation and test tensorflow datasets
-    initial_dataset_image, initial_dataset_mask = get_active_image_mask_array_list(initial_path_dataset)
+    initial_dataset_image, initial_dataset_mask = get_active_image_mask_array_list(initial_image_path,
+                                                                                   initial_mask_path)
     print(f'initial dataset image and mask loading successfully')
 
     initial_dataset = dataset(initial_dataset_image, initial_dataset_mask, mode='train', batch_size=4)
-    validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=10)
+    validation_dataset = dataset(valid_image_path, valid_mask_path, mode='valid', batch_size=10)
     # test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
-    test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_path_dataset)
+    test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_image_path, test_mask_path)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     tree_ious, o_ious = [], []
@@ -201,29 +202,30 @@ if __name__ == '__main__':
     model = initial_model_train(initial_dataset, validation_dataset)
     print('initial model loaded successfully')
     print('initial model prediction on test datasets')
-    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_path_dataset, inf=5, n=1)
+    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1)
     tree_ious.append(i_tree_iou)
     o_ious.append(i_o_iou)
     model_labeled_r, human_labeled_r = [0], [40]
     for i in np.arange(2, 8):
         print(f'{i-1} Active learning starting! ')
         # Get active 2 path dataset
-        active_path_dataset = get_path(path=path,
-                                       mode='train',
-                                       seed=seed,
-                                       active=i)
-        active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_path_dataset)
+        active_image_path, active_mask_path, active_image_id = get_path(path=path,
+                                                                        mode='train',
+                                                                        seed=seed,
+                                                                        active=i)
+        active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_image_path,
+                                                                                     active_mask_path)
 
         print(f'{i} new batch active datasets loading successfully')
-        print(f'new batch active datasets length: {len(active_path_dataset[2])}')
-        print(f'new batch active datasets id:{active_path_dataset[2]}')
+        print(f'new batch active datasets length: {len(active_image_id)}')
+        print(f'new batch active datasets id:{active_image_id}')
 
         # model_test(initial_model, test_dataset, inf=5)
         print(f'model prediction on new batch active datasets')
         images, masks, prob, df, image_id_selected = model_pred(model,
                                                                 active_dataset_image,
                                                                 active_dataset_mask,
-                                                                active_path_dataset[2],
+                                                                active_image_id,
                                                                 inf=5,
                                                                 delta=delta)
         model_labeled = len(image_id_selected)
@@ -265,9 +267,9 @@ if __name__ == '__main__':
         initial_dataset_mask = new_masks
         # new model for prediction
         print(f'Active {i} prediction on test datasets')
-        tree_iou, o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_path_dataset, inf=5, n=i)
-        tree_ious.append(tree_iou)
-        o_ious.append(o_iou)
+        tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i)
+        tree_ious.append(tree_iou_1)
+        o_ious.append(o_iou_1)
 
     data = pd.DataFrame({'active epoch': np.arange(1, 8),
                          'human label sample': human_labeled_r,
