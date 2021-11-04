@@ -49,6 +49,7 @@ def initial_model_train(initial_dataset, validation_dataset):
                   epochs=epochs,
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
+                  verbose=0,
                   callbacks=[learning_rate_scheduler])
         model.save(r'checkpoints/active/unet_active_1')
     return model
@@ -161,7 +162,7 @@ if __name__ == '__main__':
     epochs = 100
     n_classes = 2
     loss_fn = dice_loss
-    delta = 0.10
+    delta = 0.06
 
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
@@ -259,7 +260,9 @@ if __name__ == '__main__':
                   epochs=epochs,
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
-                  callbacks=[learning_rate_scheduler])
+                  verbose=0,
+                  callbacks=[learning_rate_scheduler]
+                  )
 
         model.save(f'checkpoints/active/unet_active_{i}')
         print(f'unet_active_{i} saved!')
@@ -271,12 +274,14 @@ if __name__ == '__main__':
         tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i)
         tree_ious.append(tree_iou_1)
         o_ious.append(o_iou_1)
+        delta = delta - 0.01
 
     data = pd.DataFrame({'active epoch': np.arange(1, 8),
                          'human label sample': human_labeled_r,
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
-                         'overall iou': o_ious})
+                         'overall iou': o_ious,
+                         'delta': np.arange(0.01, 0.07, 0.01)[::-1]})
     with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data')
     print(data)
