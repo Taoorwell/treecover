@@ -182,7 +182,7 @@ layers in the input array.
                 batch[j] = next(patch_gen)
 
             # EDIT HERE
-            prediction = model.predict(batch)
+            prediction = model.predict_on_batch(batch)
             if drop_border > 0:
                 prediction = prediction[:, drop_border:-drop_border, drop_border:-drop_border, :]
 
