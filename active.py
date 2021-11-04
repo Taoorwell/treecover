@@ -236,25 +236,26 @@ if __name__ == '__main__':
         print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
         print(f'Re-train model...')
-        strategy = tf.distribute.MirroredStrategy()
-        with strategy.scope():
-            optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
+        # if os.path.exists(r'')
+        another_strategy = tf.distribute.MirroredStrategy()
+        with another_strategy.scope():
+            # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
             model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}.h5',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
                                                                'tree_iou': tree_iou})
-            model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
+            # model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
-        model.fit(new_dataset,
-                  steps_per_epoch=len(new_dataset),
-                  epochs=epochs,
-                  validation_data=validation_dataset,
-                  validation_steps=len(validation_dataset),
-                  callbacks=[learning_rate_scheduler])
+            model.fit(new_dataset,
+                      steps_per_epoch=len(new_dataset),
+                      epochs=epochs,
+                      validation_data=validation_dataset,
+                      validation_steps=len(validation_dataset),
+                      callbacks=[learning_rate_scheduler])
 
-        model.save(f'checkpoints/active/unet_active_{i}.h5')
-        print(f'unet_active_{i} saved!')
+            model.save(f'checkpoints/active/unet_active_{i}.h5')
+            print(f'unet_active_{i} saved!')
 
         initial_dataset_image = new_images
         initial_dataset_mask = new_masks
