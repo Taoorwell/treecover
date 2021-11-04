@@ -242,30 +242,33 @@ if __name__ == '__main__':
         print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
         print(f'Re-train model...')
-        # if os.path.exists(r'')
-        # another_strategy = tf.distribute.MirroredStrategy()
-        # with another_strategy.scope():
-        # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
-        model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}',
-                                           custom_objects={'dice_loss': dice_loss,
-                                                           'iou': iou,
-                                                           'tree_iou': tree_iou},
-                                           compile=True)
+        if os.path.exists(f'checkpoints/active/unet_active_{i}'):
+            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i}',
+                                               custom_objects={'dice_loss': dice_loss,
+                                                               'iou': iou,
+                                                               'tree_iou': tree_iou},
+                                               compile=True)
+        else:
+            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}',
+                                               custom_objects={'dice_loss': dice_loss,
+                                                               'iou': iou,
+                                                               'tree_iou': tree_iou},
+                                               compile=True)
 
-        model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+            learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
-        model.fit(new_dataset,
-                  steps_per_epoch=len(new_dataset),
-                  epochs=epochs,
-                  validation_data=validation_dataset,
-                  validation_steps=len(validation_dataset),
-                  verbose=0,
-                  callbacks=[learning_rate_scheduler]
-                  )
+            model.fit(new_dataset,
+                      steps_per_epoch=len(new_dataset),
+                      epochs=epochs,
+                      validation_data=validation_dataset,
+                      validation_steps=len(validation_dataset),
+                      verbose=0,
+                      callbacks=[learning_rate_scheduler]
+                      )
 
-        model.save(f'checkpoints/active/unet_active_{i}')
-        print(f'unet_active_{i} saved!')
+            model.save(f'checkpoints/active/unet_active_{i}')
+            print(f'unet_active_{i} saved!')
 
         initial_dataset_image = new_images
         initial_dataset_mask = new_masks
@@ -281,7 +284,7 @@ if __name__ == '__main__':
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
-                         'delta': np.arange(0.01, 0.07, 0.01)[::-1]})
+                         'delta': [0, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
     with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data')
     print(data)
