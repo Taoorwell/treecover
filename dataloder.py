@@ -4,8 +4,8 @@ from glob import glob
 import os
 from utility import get_image
 import tensorflow as tf
-import time
-from matplotlib import pyplot as plt
+# import time
+# from matplotlib import pyplot as plt
 # from loss import log_conv
 
 
@@ -176,34 +176,34 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
     return datasets
 
 
-if __name__ == '__main__':
-    image_path, mask_path, image_i = get_path(path=r'../quality/high/',
-                                              mode='test',
-                                              seed=2,
-                                              active=0)
-    train_datasets = dataset(image_path=image_path,
-                             mask_path=mask_path,
-                             mode='test',
-                             image_shape=(256, 256),
-                             batch_size=1)
-
-    print(len(train_datasets))
-    for b_image, b_mask in train_datasets:
-        t1 = time.time()
-        print(b_image.shape, b_mask.shape)
-        t2 = time.time()
-        t = t2 - t1
-        print('time consume: {:.4f}'.format(t))
-
-    print(len(train_datasets))
-    for b_image, b_mask in train_datasets:
-        t1 = time.time()
-        print(b_image.shape, b_mask.shape)
-        t2 = time.time()
-        t = t2 - t1
-        print('time consume: {:.4f}'.format(t))
-
-    print(len(image_i), image_i)
+# if __name__ == '__main__':
+#     image_path, mask_path, image_i = get_path(path=r'../quality/high/',
+#                                               mode='test',
+#                                               seed=2,
+#                                               active=0)
+#     train_datasets = dataset(image_path=image_path,
+#                              mask_path=mask_path,
+#                              mode='test',
+#                              image_shape=(256, 256),
+#                              batch_size=1)
+#
+#     print(len(train_datasets))
+#     for b_image, b_mask in train_datasets:
+#         t1 = time.time()
+#         print(b_image.shape, b_mask.shape)
+#         t2 = time.time()
+#         t = t2 - t1
+#         print('time consume: {:.4f}'.format(t))
+#
+#     print(len(train_datasets))
+#     for b_image, b_mask in train_datasets:
+#         t1 = time.time()
+#         print(b_image.shape, b_mask.shape)
+#         t2 = time.time()
+#         t = t2 - t1
+#         print('time consume: {:.4f}'.format(t))
+#
+#     print(len(image_i), image_i)
         # break
         # # b_weight_map = log_conv(b_mask)[0, :, :, 0]
         # # print(b_weight_map.shape)

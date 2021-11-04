@@ -125,16 +125,16 @@ def combined_log_loss(y_true, y_pred, weight=False):
     return loss
 
 
-if __name__ == '__main__':
-    y_true_2 = tf.constant([[1, 0], [0, 1]], dtype=tf.float32)
-    y_pre_2 = tf.constant([[.8, .2], [.2, .8]], dtype=tf.float32)
-    cce1 = cross_entropy(y_true_2, y_pre_2)
-    print(cce1)
-
-    y_true_1 = tf.constant([[1, 0]], dtype=tf.float32)
-    y_pre_1 = tf.constant([[.8, .2]], dtype=tf.float32)
-    ce = cross_entropy(y_true_1, y_pre_1)
-    print(ce)
+# if __name__ == '__main__':
+#     y_true_2 = tf.constant([[1, 0], [0, 1]], dtype=tf.float32)
+#     y_pre_2 = tf.constant([[.8, .2], [.2, .8]], dtype=tf.float32)
+#     cce1 = cross_entropy(y_true_2, y_pre_2)
+#     print(cce1)
+#
+#     y_true_1 = tf.constant([[1, 0]], dtype=tf.float32)
+#     y_pre_1 = tf.constant([[.8, .2]], dtype=tf.float32)
+#     ce = cross_entropy(y_true_1, y_pre_1)
+#     print(ce)
 
     # # 39, 8, 137, 62
     # n = 137

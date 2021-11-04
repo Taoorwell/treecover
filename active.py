@@ -2,11 +2,12 @@
 import os
 # from utility import rgb_mask
 # import matplotlib.pyplot as plt
+from utility import get_image
 import pandas as pd
 import tensorflow as tf
 import numpy as np
 from loss import dice_loss, iou, tree_iou
-from dataloder import get_path, get_image, dataset
+from dataloder import get_path, dataset
 from unets import U_Net
 from test_pre import predict_on_array
 
@@ -24,7 +25,7 @@ def lr_cosine_decay(e):
     return initial_learning_rate * cosine_decay
 
 
-def initial_model_train():
+def initial_model_train(initial_dataset, validation_dataset):
     if os.path.exists(r'checkpoints/active/unet_active_1'):
         model = tf.keras.models.load_model(r'checkpoints/active/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
@@ -56,13 +57,13 @@ def initial_model_train():
     return model
 
 
-def model_test(model, test_dataset_images, test_dataset_masks, inf, n):
+def model_test(model, test_dataset_images, test_dataset_masks, test_path_dataset, inf, n):
     acc1, acc2 = [], []
-    for im, ms, i in zip(test_dataset_images, test_dataset_masks, test_path_dataset[2]):
+    for im, ms in zip(test_dataset_images, test_dataset_masks):
         image_arr, mask_arr = im, ms
         # print(image_arr.shape, type(image_arr))
         outputs = np.zeros((inf, ) + mask_arr.shape, dtype=np.float32)
-        for i in range(inf):
+        for f in range(inf):
             output_1 = predict_on_array(model=model,
                                         arr=image_arr,
                                         in_shape=(256, 256, 7),
@@ -70,7 +71,7 @@ def model_test(model, test_dataset_images, test_dataset_masks, inf, n):
                                         stride=200,
                                         batchsize=20,
                                         augmentation=True)
-            outputs[i] = output_1
+            outputs[f] = output_1
         # print(outputs.shape)
         outputs = np.mean(outputs, axis=0)
         # print(outputs.shape)
@@ -108,9 +109,9 @@ def model_pred(model, images, masks, images_id, inf, delta):
         return E1, E2, v
 
     prob, entropy1, entropy2, variance = [], [], [], []
-    for im, ms, ids in zip(images, masks, images_id):
+    for im, ms in zip(images, masks):
         outputs = np.zeros((inf,) + im.shape[:-1] + (2,), dtype=np.float32)
-        for i in range(inf):
+        for f in range(inf):
             mask_prob = predict_on_array(model=model,
                                          arr=im,
                                          in_shape=(256, 256, 7),
@@ -118,7 +119,7 @@ def model_pred(model, images, masks, images_id, inf, delta):
                                          stride=100,
                                          batchsize=20,
                                          augmentation=False)
-            outputs[i] = mask_prob
+            outputs[f] = mask_prob
         e1, e2, v = uncertainty(outputs=outputs)
         # plt.subplot(131)
         # plt.imshow(im[:, :, :3])
@@ -197,10 +198,10 @@ if __name__ == '__main__':
 
     tree_ious, o_ious = [], []
 
-    model = initial_model_train()
+    model = initial_model_train(initial_dataset, validation_dataset)
     print('initial model loaded successfully')
     print('initial model prediction on test datasets')
-    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, inf=5, n=1)
+    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_path_dataset, inf=5, n=1)
     tree_ious.append(i_tree_iou)
     o_ious.append(i_o_iou)
     model_labeled_r, human_labeled_r = [0], [40]
@@ -247,7 +248,7 @@ if __name__ == '__main__':
                                                                'tree_iou': tree_iou},
                                                compile=True)
 
-            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[model.iou, model.tree_iou])
+            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
         model.fit(new_dataset,
@@ -264,7 +265,7 @@ if __name__ == '__main__':
         initial_dataset_mask = new_masks
         # new model for prediction
         print(f'Active {i} prediction on test datasets')
-        tree_iou, o_iou = model_test(model, test_dataset_image, test_dataset_mask, inf=5, n=i)
+        tree_iou, o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_path_dataset, inf=5, n=i)
         tree_ious.append(tree_iou)
         o_ious.append(o_iou)
 
