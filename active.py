@@ -23,8 +23,8 @@ def lr_cosine_decay(e):
 
 
 def initial_model_train(initial_dataset, validation_dataset):
-    if os.path.exists(r'checkpoints/active/unet_active_1'):
-        model = tf.keras.models.load_model(r'checkpoints/active/unet_active_1',
+    if os.path.exists(r'checkpoints/active/low/unet_active_1'):
+        model = tf.keras.models.load_model(r'checkpoints/active/low/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
@@ -51,7 +51,7 @@ def initial_model_train(initial_dataset, validation_dataset):
                   validation_steps=len(validation_dataset),
                   verbose=0,
                   callbacks=[learning_rate_scheduler])
-        model.save(r'checkpoints/active/unet_active_1')
+        model.save(r'checkpoints/active/low/unet_active_1')
     return model
 
 
@@ -84,7 +84,8 @@ def model_test(model, images, masks, images_ids, inf, n):
     print(df)
     mean_tree_iou, mean_o_iou = np.mean(acc1), np.mean(acc2)
     print(mean_tree_iou, mean_o_iou)
-    with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    with pd.ExcelWriter(r'checkpoints/active/low/r.xlsx',
+                        engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         df.to_excel(writer, sheet_name=f'active_{n}')
     return mean_tree_iou, mean_o_iou
 
@@ -157,7 +158,7 @@ def model_pred(model, images, masks, images_ids, inf, delta):
 if __name__ == '__main__':
     # some parameters
     seed = 2
-    path = r'../quality/high/'
+    path = r'../quality/low/'
     initial_learning_rate = 0.0001
     epochs = 100
     n_classes = 2
@@ -226,7 +227,7 @@ if __name__ == '__main__':
                                                                 active_image_id,
                                                                 inf=5,
                                                                 delta=delta)
-        with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a',
+        with pd.ExcelWriter(r'checkpoints/active/low/r.xlsx', engine='openpyxl', mode='a',
                             if_sheet_exists='replace') as writer:
             df.to_excel(writer, sheet_name=f'active_e_{i}')
 
@@ -242,14 +243,14 @@ if __name__ == '__main__':
         print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
         print(f'Re-train model...')
-        if os.path.exists(f'checkpoints/active/unet_active_{i}'):
-            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i}',
+        if os.path.exists(f'checkpoints/active/low/unet_active_{i}'):
+            model = tf.keras.models.load_model(f'checkpoints/active/low/unet_active_{i}',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
                                                                'tree_iou': tree_iou},
                                                compile=True)
         else:
-            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}',
+            model = tf.keras.models.load_model(f'checkpoints/active/low/unet_active_{i-1}',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
                                                                'tree_iou': tree_iou},
@@ -267,7 +268,7 @@ if __name__ == '__main__':
                       callbacks=[learning_rate_scheduler]
                       )
 
-            model.save(f'checkpoints/active/unet_active_{i}')
+            model.save(f'checkpoints/active/low/unet_active_{i}')
             print(f'unet_active_{i} saved!')
 
         initial_dataset_image = new_images
@@ -285,7 +286,8 @@ if __name__ == '__main__':
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
                          'delta': [0, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
-    with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    with pd.ExcelWriter(r'checkpoints/active/low/r.xlsx',
+                        engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data')
     print(data)
     # for im, ms, p, (index, rows), ids in zip(images, masks, prob, df.iterrows(), active2_path_dataset[2]):
