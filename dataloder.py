@@ -113,9 +113,9 @@ def get_path(path, mode='train', seed=1, active=0):
 
 
 def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
-    options = tf.data.Options()
-    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    # AUTOTUNE = tf.data.experimental.AUTOTUNE
+    # options = tf.data.Options()
+    # options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
+    AUTOTUNE = tf.data.experimental.AUTOTUNE
 
     datasets = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
     # creat parse function to parse path to image
@@ -162,16 +162,16 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
         y3.set_shape(image_shape + (2,))
         return x3, y3
     if type(image_path[0]) == str:
-        datasets = datasets.map(parse_function)
+        datasets = datasets.map(parse_function, num_parallel_calls=AUTOTUNE)
     if mode == 'train':
-        datasets = datasets.map(augment_function)
+        datasets = datasets.map(augment_function, num_parallel_calls=AUTOTUNE)
     elif mode == 'valid':
-        datasets = datasets.map(augment_function_valid)
+        datasets = datasets.map(augment_function_valid, num_parallel_calls=AUTOTUNE)
     else:
         pass
     datasets = datasets.batch(batch_size)
-    # datasets = datasets.prefetch()
-    datasets = datasets.with_options(options)
+    datasets = datasets.prefetch(1)
+    # datasets = datasets.with_options(options)
     # datasets = datasets.repeat()
     return datasets
 
