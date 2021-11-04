@@ -243,9 +243,10 @@ if __name__ == '__main__':
             model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}.h5',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
-                                                               'tree_iou': tree_iou})
+                                                               'tree_iou': tree_iou},
+                                               compile=True)
 
-            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[model.iou, model.tree_iou])
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
             model.fit(new_dataset,
