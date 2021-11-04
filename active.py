@@ -85,7 +85,7 @@ def model_test(model, dataset, inf, n):
     print(df)
     mean_tree_iou, mean_o_iou = np.mean(acc1), np.mean(acc2)
     print(mean_tree_iou, mean_o_iou)
-    with pd.ExcelWriter(r'checkpoints/active/r.xlsx', mode='a') as writer:
+    with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         df.to_excel(writer, sheet_name=f'active_{n}')
     return mean_tree_iou, mean_o_iou
 
@@ -239,7 +239,7 @@ if __name__ == '__main__':
         strategy = tf.distribute.MirroredStrategy()
         with strategy.scope():
             optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
-            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i - 1}.h5',
+            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}.h5',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
                                                                'tree_iou': tree_iou})

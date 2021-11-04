@@ -5,7 +5,7 @@ from dataloder import dataset, get_path
 
 if __name__ == '__main__':
     # some parameters
-    path = r'../quality/high/'
+    path = r'../quality/low/'
     seed = 2
     width = 256
     n_classes = 2
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/unet_res_high_2',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/unet_res_low_2',
                                                            histogram_freq=1)
 
     model.fit(train_datasets,
@@ -59,5 +59,5 @@ if __name__ == '__main__':
               validation_data=valid_datasets,
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
-    model.save('checkpoints/ckpt-unet_res_high_2.h5')
+    model.save('checkpoints/ckpt-unet_res_low_2.h5')
     # model.save_weights('checkpoints/ckpt-unet_res_high_2')

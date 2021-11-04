@@ -115,7 +115,7 @@ def get_path(path, mode='train', seed=1, active=0):
 def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    AUTOTUNE = tf.data.experimental.AUTOTUNE
+    AUTOTUNE = tf.data.AUTOTUNE
 
     datasets = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
     # creat parse function to parse path to image
@@ -177,7 +177,7 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
 
 
 if __name__ == '__main__':
-    image_path, mask_path, image_i = get_path(path=r'../quality/high',
+    image_path, mask_path, image_i = get_path(path=r'../quality/high/',
                                               mode='valid',
                                               seed=2,
                                               active=0)
