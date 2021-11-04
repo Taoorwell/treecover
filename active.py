@@ -25,8 +25,8 @@ def lr_cosine_decay(e):
 
 
 def initial_model_train():
-    if os.path.exists(r'checkpoints/active/unet_active_1.h5'):
-        model = tf.keras.models.load_model(r'checkpoints/active/unet_active_1.h5',
+    if os.path.exists(r'checkpoints/active/unet_active_1'):
+        model = tf.keras.models.load_model(r'checkpoints/active/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
@@ -52,19 +52,19 @@ def initial_model_train():
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
                   callbacks=[learning_rate_scheduler])
-        model.save(r'checkpoints/active/unet_active_1.h5')
+        model.save(r'checkpoints/active/unet_active_1')
     return model
 
 
-def model_test(model, dataset, inf, n):
+def model_test(model, test_dataset_images, test_dataset_masks, inf, n):
     acc1, acc2 = [], []
-    for (im, ms), i in zip(dataset, test_path_dataset[2]):
-        image_arr, mask_arr = im.numpy(), ms.numpy()
+    for im, ms, i in zip(test_dataset_images, test_dataset_masks, test_path_dataset[2]):
+        image_arr, mask_arr = im, ms
         # print(image_arr.shape, type(image_arr))
-        outputs = np.zeros((inf, ) + mask_arr[0].shape, dtype=np.float32)
+        outputs = np.zeros((inf, ) + mask_arr.shape, dtype=np.float32)
         for i in range(inf):
             output_1 = predict_on_array(model=model,
-                                        arr=image_arr[0],
+                                        arr=image_arr,
                                         in_shape=(256, 256, 7),
                                         out_bands=2,
                                         stride=200,
@@ -74,8 +74,8 @@ def model_test(model, dataset, inf, n):
         # print(outputs.shape)
         outputs = np.mean(outputs, axis=0)
         # print(outputs.shape)
-        acc_iou_1 = iou(mask_arr[0][:, :, 1], outputs[:, :, 1])
-        acc_iou_2 = iou(mask_arr[0], outputs)
+        acc_iou_1 = iou(mask_arr[:, :, 1], outputs[:, :, 1])
+        acc_iou_2 = iou(mask_arr, outputs)
         acc1.append(acc_iou_1.numpy())
         acc2.append(acc_iou_2.numpy())
 
@@ -191,7 +191,8 @@ if __name__ == '__main__':
 
     initial_dataset = dataset(initial_dataset_image, initial_dataset_mask, mode='train', batch_size=4)
     validation_dataset = dataset(validation_path_dataset[0], validation_path_dataset[1], mode='valid', batch_size=10)
-    test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
+    # test_dataset = dataset(test_path_dataset[0], test_path_dataset[1], mode='test', batch_size=1)
+    test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_path_dataset)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     tree_ious, o_ious = [], []
@@ -199,7 +200,7 @@ if __name__ == '__main__':
     model = initial_model_train()
     print('initial model loaded successfully')
     print('initial model prediction on test datasets')
-    i_tree_iou, i_o_iou = model_test(model, test_dataset, inf=5, n=1)
+    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, inf=5, n=1)
     tree_ious.append(i_tree_iou)
     o_ious.append(i_o_iou)
     model_labeled_r, human_labeled_r = [0], [40]
@@ -240,7 +241,7 @@ if __name__ == '__main__':
         another_strategy = tf.distribute.MirroredStrategy()
         with another_strategy.scope():
             # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
-            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}.h5',
+            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
                                                                'tree_iou': tree_iou},
@@ -249,21 +250,21 @@ if __name__ == '__main__':
             model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[model.iou, model.tree_iou])
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
-            model.fit(new_dataset,
-                      steps_per_epoch=len(new_dataset),
-                      epochs=epochs,
-                      validation_data=validation_dataset,
-                      validation_steps=len(validation_dataset),
-                      callbacks=[learning_rate_scheduler])
+        model.fit(new_dataset,
+                  steps_per_epoch=len(new_dataset),
+                  epochs=epochs,
+                  validation_data=validation_dataset,
+                  validation_steps=len(validation_dataset),
+                  callbacks=[learning_rate_scheduler])
 
-            model.save(f'checkpoints/active/unet_active_{i}.h5')
-            print(f'unet_active_{i} saved!')
+        model.save(f'checkpoints/active/unet_active_{i}')
+        print(f'unet_active_{i} saved!')
 
         initial_dataset_image = new_images
         initial_dataset_mask = new_masks
         # new model for prediction
         print(f'Active {i} prediction on test datasets')
-        tree_iou, o_iou = model_test(model, test_dataset, inf=5, n=i)
+        tree_iou, o_iou = model_test(model, test_dataset_image, test_dataset_mask, inf=5, n=i)
         tree_ious.append(tree_iou)
         o_ious.append(o_iou)
 

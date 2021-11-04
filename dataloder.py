@@ -194,6 +194,15 @@ if __name__ == '__main__':
         t2 = time.time()
         t = t2 - t1
         print('time consume: {:.4f}'.format(t))
+
+    print(len(train_datasets))
+    for b_image, b_mask in train_datasets:
+        t1 = time.time()
+        print(b_image.shape, b_mask.shape)
+        t2 = time.time()
+        t = t2 - t1
+        print('time consume: {:.4f}'.format(t))
+
     print(len(image_i), image_i)
         # break
         # # b_weight_map = log_conv(b_mask)[0, :, :, 0]
