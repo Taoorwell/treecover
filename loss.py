@@ -15,6 +15,7 @@ def iou(y_true, y_pred):
     return (numerator + eps) / (denominator - numerator + eps)
 
 
+@tf.autograph.experimental.do_not_convert
 def tree_iou(y_true, y_pred):
     y_true = y_true[..., 1]
     y_pred = y_pred[..., 1]

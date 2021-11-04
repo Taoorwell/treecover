@@ -164,7 +164,7 @@ if __name__ == '__main__':
     epochs = 100
     n_classes = 2
     loss_fn = dice_loss
-    delta = 0.21
+    delta = 0.10
 
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
@@ -228,6 +228,10 @@ if __name__ == '__main__':
                                                                 active_image_id,
                                                                 inf=5,
                                                                 delta=delta)
+        with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a',
+                            if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=f'active_e_{i}')
+
         model_labeled = len(image_id_selected)
         human_labeled = 40 - model_labeled
         model_labeled_r.append(model_labeled)
@@ -241,17 +245,17 @@ if __name__ == '__main__':
 
         print(f'Re-train model...')
         # if os.path.exists(r'')
-        another_strategy = tf.distribute.MirroredStrategy()
-        with another_strategy.scope():
-            # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
-            model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}',
-                                               custom_objects={'dice_loss': dice_loss,
-                                                               'iou': iou,
-                                                               'tree_iou': tree_iou},
-                                               compile=True)
+        # another_strategy = tf.distribute.MirroredStrategy()
+        # with another_strategy.scope():
+        # optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
+        model = tf.keras.models.load_model(f'checkpoints/active/unet_active_{i-1}',
+                                           custom_objects={'dice_loss': dice_loss,
+                                                           'iou': iou,
+                                                           'tree_iou': tree_iou},
+                                           )
 
-            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-            learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+        # model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
         model.fit(new_dataset,
                   steps_per_epoch=len(new_dataset),
@@ -276,6 +280,8 @@ if __name__ == '__main__':
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious})
+    with pd.ExcelWriter(r'checkpoints/active/r.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        data.to_excel(writer, sheet_name=f'active_data')
     print(data)
     # for im, ms, p, (index, rows), ids in zip(images, masks, prob, df.iterrows(), active2_path_dataset[2]):
     #     if rows['Entropy1'] < 0.21:
@@ -290,5 +296,5 @@ if __name__ == '__main__':
     #         axs[2].set_xlabel(f'prob_{ids} \n model labeled' if ids in image_id_selected else f'drop')
     #         axs[2].set_title(f"E1:{rows['Entropy1']:.4f} \n Var:{rows['Variance']:.4f}")
     #         plt.show()
-        # break
+        # bre
 
