@@ -108,6 +108,7 @@ def model_pred(model, images, masks, images_ids, inf, delta):
         return E1, E2, v
 
     prob, entropy1, entropy2, variance = [], [], [], []
+    t_c, o_c = [], []
     for im, ms in zip(images, masks):
         outputs = np.zeros((inf,) + im.shape[:-1] + (2,), dtype=np.float32)
         for f in range(inf):
@@ -120,28 +121,21 @@ def model_pred(model, images, masks, images_ids, inf, delta):
                                          augmentation=False)
             outputs[f] = mask_prob
         e1, e2, v = uncertainty(outputs=outputs)
-        # plt.subplot(131)
-        # plt.imshow(im[:, :, :3])
-        # plt.xlabel(f'image_{ids}')
-        #
-        # plt.subplot(132)
-        # plt.imshow(rgb_mask(np.argmax(ms, axis=-1)))
-        # plt.xlabel(f'mask_{ids}')
-        #
-        # plt.subplot(133)
-        # plt.imshow(rgb_mask(np.argmax((np.mean(outputs, axis=0) > 0.5) * 1, axis=-1)))
-        # plt.title(f'Entropy:{e1}')
-        #
-        # plt.show()
+
         entropy1.append(e1)
         entropy2.append(e2)
         variance.append(v)
         prob.append((np.mean(outputs, axis=0) > 0.5) * 1)
 
+        t_c.append(iou(ms[:, :, 1], np.mean(outputs, axis=0)[:, :, 1]).numpy())
+        o_c.append(iou(ms, np.mean(outputs, axis=0)).numpy())
+
     df = pd.DataFrame({'Image_id': images_ids,
                        'Entropy1': entropy1,
                        'Entropy2': entropy2,
-                       'Variance': variance})
+                       'Variance': variance,
+                       'Tree_iou': t_c,
+                       'O_iou': o_c})
     print(df)
     image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
     print(f'number of high: {len(image_id_selected)}, '
