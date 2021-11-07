@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
             print(f'Re-train model...')
             if os.path.exists(f'checkpoints/active/high/{int(delta * 100)}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_{i}',
+                model = tf.keras.models.load_model(f'checkpoints/active/high/{int(delta * 100)}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
