@@ -201,6 +201,8 @@ if __name__ == '__main__':
         tree_ious.append(i_tree_iou)
         o_ious.append(i_o_iou)
         model_labeled_r, human_labeled_r = [0], [40]
+        initial_dataset_image_0 = initial_dataset_image
+        initial_dataset_mask_0 = initial_dataset_mask
         for i in np.arange(2, 8):
             print(f'{delta}_{i-1} Active learning starting! ')
             # Get active 2 path dataset
@@ -232,8 +234,8 @@ if __name__ == '__main__':
             model_labeled_r.append(model_labeled)
             human_labeled_r.append(human_labeled)
 
-            new_images = np.concatenate([initial_dataset_image, images], axis=0)
-            new_masks = np.concatenate([initial_dataset_mask, masks], axis=0)
+            new_images = np.concatenate([initial_dataset_image_0, images], axis=0)
+            new_masks = np.concatenate([initial_dataset_mask_0, masks], axis=0)
             new_dataset = dataset(new_images, new_masks, mode='train', batch_size=4)
             print(f'Concatenate datasets built for re-train model')
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
@@ -254,21 +256,24 @@ if __name__ == '__main__':
 
                 model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
                 learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-
+                # tensorboard
+                tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+                    log_dir=f'tb_callback_dir/active/high/{int(delta * 100)}/unet_active_{i}',
+                    histogram_freq=1)
                 model.fit(new_dataset,
                           steps_per_epoch=len(new_dataset),
                           epochs=epochs,
                           validation_data=validation_dataset,
                           validation_steps=len(validation_dataset),
                           verbose=0,
-                          callbacks=[learning_rate_scheduler]
+                          callbacks=[learning_rate_scheduler, tensorboard_callbacks]
                           )
 
                 model.save(f'checkpoints/active/high/{int(delta * 100)}/unet_active_{i}')
                 print(f'unet_active_{delta}_{i} saved!')
 
-            initial_dataset_image = new_images
-            initial_dataset_mask = new_masks
+            initial_dataset_image_0 = new_images
+            initial_dataset_mask_0 = new_masks
             # new model for prediction
             print(f'Active {i} prediction on test datasets')
             tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i,
