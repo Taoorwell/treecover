@@ -38,6 +38,9 @@ def get_mix_path(path, mode='train', seed=2, p=0.0):
 
 
 if __name__ == '__main__':
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
     path = r'../quality/'
     # p = 0.9
     epochs = 300
@@ -45,7 +48,6 @@ if __name__ == '__main__':
     loss_fn = dice_loss
     initial_learning_rate = 0.0001
 
-    
     valid_image_path, valid_mask_path = get_mix_path(path, mode='valid', seed=2)
     test_image_path, test_mask_path = get_mix_path(path, mode='test', seed=2)
     image_id_test = [int(p.split('_')[-1].split('.')[0]) for p in test_mask_path]
@@ -60,7 +62,8 @@ if __name__ == '__main__':
                             mode='train',
                             batch_size=1)
 
-    for p in range(0.1, 1.0, 0.1):
+    for p in np.arange(0.1, 1.0, 0.1):
+        print(f'{p:.0%} high quality mask training...')
         train_image_path, train_mask_path = get_mix_path(path, mode='train', seed=2, p=p)
         train_datasets = dataset(train_image_path,
                                  train_mask_path,
@@ -82,11 +85,11 @@ if __name__ == '__main__':
                           mc=False,
                           residual=True)
             model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
-        model.summary()
+        # model.summary()
 
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
         # tensorboard
-        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/unet_mix_mask_{p*10}',
+        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/unet_mix_mask_{int(p*10)}',
                                                                histogram_freq=1)
 
         model.fit(train_datasets,
@@ -95,7 +98,7 @@ if __name__ == '__main__':
                   validation_data=valid_datasets,
                   validation_steps=len(valid_datasets),
                   callbacks=[learning_rate_scheduler, tensorboard_callbacks])
-        model.save(f'checkpoints/unet_mix_mask_{p*10}')
+        model.save(f'checkpoints/unet_mix_mask_{int(p*10)}')
         # model prediction on test dataset
         acc1, acc2 = [], []
         for (im, ms), i in zip(test_datasets, image_id_test):
@@ -121,4 +124,5 @@ if __name__ == '__main__':
         print(np.mean(acc1), np.mean(acc2))
         with pd.ExcelWriter(r'checkpoints/active/r.xlsx', mode='a',
                             engine='openpyxl', if_sheet_exists='replace') as writer:
-            df.to_excel(writer, sheet_name=f'mix_mask_{p*10}')
+            df.to_excel(writer, sheet_name=f'mix_mask_{int(p*10)}')
+        del model
