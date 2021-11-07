@@ -22,9 +22,9 @@ def lr_cosine_decay(e):
     return initial_learning_rate * cosine_decay
 
 
-def initial_model_train(initial_dataset, validation_dataset):
-    if os.path.exists(r'checkpoints/active/low/unet_active_1'):
-        model = tf.keras.models.load_model(r'checkpoints/active/low/unet_active_1',
+def initial_model_train(delta, initial_dataset, validation_dataset):
+    if os.path.exists(f'checkpoints/active/high/{int(delta*100)}/unet_active_1'):
+        model = tf.keras.models.load_model(f'checkpoints/active/high/{int(delta*100)}/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
@@ -41,8 +41,8 @@ def initial_model_train(initial_dataset, validation_dataset):
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
         # tensorboard
-        # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_active_1',
-        #                                                        histogram_freq=1)
+        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/active/high/{int(delta*100)}/unet_active_1',
+                                                               histogram_freq=1)
 
         model.fit(initial_dataset,
                   steps_per_epoch=len(initial_dataset),
@@ -50,12 +50,12 @@ def initial_model_train(initial_dataset, validation_dataset):
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
                   verbose=0,
-                  callbacks=[learning_rate_scheduler])
-        model.save(r'checkpoints/active/low/unet_active_1')
+                  callbacks=[learning_rate_scheduler, tensorboard_callbacks])
+        model.save(f'checkpoints/active/high/{int(delta*100)}/unet_active_1')
     return model
 
 
-def model_test(model, images, masks, images_ids, inf, n):
+def model_test(model, images, masks, images_ids, inf, n, delta):
     acc1, acc2 = [], []
     for im, ms in zip(images, masks):
         image_arr, mask_arr = im, ms
@@ -84,9 +84,9 @@ def model_test(model, images, masks, images_ids, inf, n):
     print(df)
     mean_tree_iou, mean_o_iou = np.mean(acc1), np.mean(acc2)
     print(mean_tree_iou, mean_o_iou)
-    with pd.ExcelWriter(r'checkpoints/active/low/r.xlsx',
+    with pd.ExcelWriter(r'checkpoints/active/high/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        df.to_excel(writer, sheet_name=f'active_{n}')
+        df.to_excel(writer, sheet_name=f'active_{delta}_{n}')
     return mean_tree_iou, mean_o_iou
 
 
@@ -152,12 +152,12 @@ def model_pred(model, images, masks, images_ids, inf, delta):
 if __name__ == '__main__':
     # some parameters
     seed = 2
-    path = r'../quality/low/'
+    path = r'../quality/high/'
     initial_learning_rate = 0.0001
     epochs = 100
     n_classes = 2
     loss_fn = dice_loss
-    delta = 0.06
+    # delta = 0.06
 
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
@@ -190,100 +190,103 @@ if __name__ == '__main__':
     test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_image_path, test_mask_path)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
-    tree_ious, o_ious = [], []
+    for delta in [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]:
+        tree_ious, o_ious = [], []
 
-    model = initial_model_train(initial_dataset, validation_dataset)
-    print('initial model loaded successfully')
-    print('initial model prediction on test datasets')
-    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1)
-    tree_ious.append(i_tree_iou)
-    o_ious.append(i_o_iou)
-    model_labeled_r, human_labeled_r = [0], [40]
-    for i in np.arange(2, 8):
-        print(f'{i-1} Active learning starting! ')
-        # Get active 2 path dataset
-        active_image_path, active_mask_path, active_image_id = get_path(path=path,
-                                                                        mode='train',
-                                                                        seed=seed,
-                                                                        active=i)
-        active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_image_path,
-                                                                                     active_mask_path)
+        model = initial_model_train(delta, initial_dataset, validation_dataset)
+        print('initial model loaded successfully')
+        print('initial model prediction on test datasets')
+        i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1,
+                                         delta=delta)
+        tree_ious.append(i_tree_iou)
+        o_ious.append(i_o_iou)
+        model_labeled_r, human_labeled_r = [0], [40]
+        for i in np.arange(2, 8):
+            print(f'{delta}_{i-1} Active learning starting! ')
+            # Get active 2 path dataset
+            active_image_path, active_mask_path, active_image_id = get_path(path=path,
+                                                                            mode='train',
+                                                                            seed=seed,
+                                                                            active=i)
+            active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_image_path,
+                                                                                         active_mask_path)
 
-        print(f'{i} new batch active datasets loading successfully')
-        print(f'new batch active datasets length: {len(active_image_id)}')
-        print(f'new batch active datasets id:{active_image_id}')
+            print(f'{i} new batch active datasets loading successfully')
+            print(f'new batch active datasets length: {len(active_image_id)}')
+            print(f'new batch active datasets id:{active_image_id}')
 
-        # model_test(initial_model, test_dataset, inf=5)
-        print(f'model prediction on new batch active datasets')
-        images, masks, prob, df, image_id_selected = model_pred(model,
-                                                                active_dataset_image,
-                                                                active_dataset_mask,
-                                                                active_image_id,
-                                                                inf=5,
-                                                                delta=delta)
-        with pd.ExcelWriter(r'checkpoints/active/low/r.xlsx', engine='openpyxl', mode='a',
-                            if_sheet_exists='replace') as writer:
-            df.to_excel(writer, sheet_name=f'active_e_{i}')
+            # model_test(initial_model, test_dataset, inf=5)
+            print(f'model prediction on new batch active datasets')
+            images, masks, prob, df, image_id_selected = model_pred(model,
+                                                                    active_dataset_image,
+                                                                    active_dataset_mask,
+                                                                    active_image_id,
+                                                                    inf=5,
+                                                                    delta=delta)
+            with pd.ExcelWriter(r'checkpoints/active/high/r.xlsx', engine='openpyxl', mode='a',
+                                if_sheet_exists='replace') as writer:
+                df.to_excel(writer, sheet_name=f'active_e_{delta}_{i}')
 
-        model_labeled = len(image_id_selected)
-        human_labeled = 40 - model_labeled
-        model_labeled_r.append(model_labeled)
-        human_labeled_r.append(human_labeled)
+            model_labeled = len(image_id_selected)
+            human_labeled = 40 - model_labeled
+            model_labeled_r.append(model_labeled)
+            human_labeled_r.append(human_labeled)
 
-        new_images = np.concatenate([initial_dataset_image, images], axis=0)
-        new_masks = np.concatenate([initial_dataset_mask, masks], axis=0)
-        new_dataset = dataset(new_images, new_masks, mode='train', batch_size=4)
-        print(f'Concatenate datasets built for re-train model')
-        print(f'Concatenate datasets length: {len(new_dataset) * 4}')
+            new_images = np.concatenate([initial_dataset_image, images], axis=0)
+            new_masks = np.concatenate([initial_dataset_mask, masks], axis=0)
+            new_dataset = dataset(new_images, new_masks, mode='train', batch_size=4)
+            print(f'Concatenate datasets built for re-train model')
+            print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
-        print(f'Re-train model...')
-        if os.path.exists(f'checkpoints/active/low/unet_active_{i}'):
-            model = tf.keras.models.load_model(f'checkpoints/active/low/unet_active_{i}',
-                                               custom_objects={'dice_loss': dice_loss,
-                                                               'iou': iou,
-                                                               'tree_iou': tree_iou},
-                                               compile=True)
-        else:
-            model = tf.keras.models.load_model(f'checkpoints/active/low/unet_active_{i-1}',
-                                               custom_objects={'dice_loss': dice_loss,
-                                                               'iou': iou,
-                                                               'tree_iou': tree_iou},
-                                               compile=True)
+            print(f'Re-train model...')
+            if os.path.exists(f'checkpoints/active/high/{int(delta * 100)}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_{i}',
+                                                   custom_objects={'dice_loss': dice_loss,
+                                                                   'iou': iou,
+                                                                   'tree_iou': tree_iou},
+                                                   compile=True)
+            else:
+                model = tf.keras.models.load_model(f'checkpoints/active/high/{int(delta * 100)}/unet_active_{i-1}',
+                                                   custom_objects={'dice_loss': dice_loss,
+                                                                   'iou': iou,
+                                                                   'tree_iou': tree_iou},
+                                                   compile=True)
 
-            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-            learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+                model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+                learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
 
-            model.fit(new_dataset,
-                      steps_per_epoch=len(new_dataset),
-                      epochs=epochs,
-                      validation_data=validation_dataset,
-                      validation_steps=len(validation_dataset),
-                      verbose=0,
-                      callbacks=[learning_rate_scheduler]
-                      )
+                model.fit(new_dataset,
+                          steps_per_epoch=len(new_dataset),
+                          epochs=epochs,
+                          validation_data=validation_dataset,
+                          validation_steps=len(validation_dataset),
+                          verbose=0,
+                          callbacks=[learning_rate_scheduler]
+                          )
 
-            model.save(f'checkpoints/active/low/unet_active_{i}')
-            print(f'unet_active_{i} saved!')
+                model.save(f'checkpoints/active/high/{int(delta * 100)}/unet_active_{i}')
+                print(f'unet_active_{delta}_{i} saved!')
 
-        initial_dataset_image = new_images
-        initial_dataset_mask = new_masks
-        # new model for prediction
-        print(f'Active {i} prediction on test datasets')
-        tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i)
-        tree_ious.append(tree_iou_1)
-        o_ious.append(o_iou_1)
-        delta = delta - 0.01
+            initial_dataset_image = new_images
+            initial_dataset_mask = new_masks
+            # new model for prediction
+            print(f'Active {i} prediction on test datasets')
+            tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i,
+                                             delta=delta)
+            tree_ious.append(tree_iou_1)
+            o_ious.append(o_iou_1)
+            # delta = delta - 0.01
 
-    data = pd.DataFrame({'active epoch': np.arange(1, 8),
-                         'human label sample': human_labeled_r,
-                         'model label sample': model_labeled_r,
-                         'tree iou': tree_ious,
-                         'overall iou': o_ious,
-                         'delta': [0, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
-    with pd.ExcelWriter(r'checkpoints/active/low/r.xlsx',
-                        engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        data.to_excel(writer, sheet_name=f'active_data')
-    print(data)
+        data = pd.DataFrame({'active epoch': np.arange(1, 8),
+                             'human label sample': human_labeled_r,
+                             'model label sample': model_labeled_r,
+                             'tree iou': tree_ious,
+                             'overall iou': o_ious,
+                             })
+        with pd.ExcelWriter(r'checkpoints/active/high/r.xlsx',
+                            engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            data.to_excel(writer, sheet_name=f'active_data_{delta}')
+        print(data)
     # for im, ms, p, (index, rows), ids in zip(images, masks, prob, df.iterrows(), active2_path_dataset[2]):
     #     if rows['Entropy1'] < 0.21:
     #         fig, axs = plt.subplots(1, 3, figsize=(10, 5))
