@@ -38,6 +38,9 @@ def get_mix_path(path, mode='train', seed=2, p=0.0):
 
 
 if __name__ == '__main__':
+    path = r'../quality/'
+    # test_image_path, test_mask_path = get_mix_path(path, mode='test', seed=2)
+    # print(test_mask_path)
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
