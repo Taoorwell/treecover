@@ -96,3 +96,18 @@ path = r'../results/'
 # plt.ylim(0.5, 0.9)
 # plt.legend(loc=2, prop={'size': 8})
 # plt.show()
+# ########### model uncertainty analysis #############
+fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
+plt.subplots_adjust(wspace=0.3, hspace=0.5)
+for i, ax in zip(range(2, 8), axis.flat):
+    # print(i)
+    df = pd.read_excel(path + 'active/high/r_high_fixed.xlsx', sheet_name=f'active_e_0.06_{i}')
+    df = df[:30]
+    # print(df)
+    ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=80)
+    ax.axvspan(0, 0.06, alpha=0.2, color='r')
+    ax.set_title(f'active_{i-1}_epoch')
+    ax.set_xlabel('Entropy')
+    ax.set_ylabel('Iou')
+
+plt.show()
