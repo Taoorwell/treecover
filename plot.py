@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 path = r'../results/'
 
-# ####################high and low quality with residual Unet on test images (30) ############
+# #################### high and low quality with residual Unet on test images (30) ############
 # df = pd.read_excel(path + r'high_low_2/r1.xlsx', sheet_name='low-high-nodropout')
 # df = df[:30]
 # print(df)
@@ -78,7 +78,7 @@ path = r'../results/'
 # plt.legend()
 # plt.show()
 
-# #########################group bar plot for mix datasets on test images (30) #########
+# #########################group bar plot for mix datasets on test images (30) ###########
 # plt.figure(figsize=(12, 6))
 # barWidth = 0.25
 # bar1 = m_tree_iou
@@ -96,18 +96,36 @@ path = r'../results/'
 # plt.ylim(0.5, 0.9)
 # plt.legend(loc=2, prop={'size': 8})
 # plt.show()
-# ########### model uncertainty analysis #############
-fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
-plt.subplots_adjust(wspace=0.3, hspace=0.5)
-for i, ax in zip(range(2, 8), axis.flat):
-    # print(i)
-    df = pd.read_excel(path + 'active/high/r_high_fixed.xlsx', sheet_name=f'active_e_0.06_{i}')
-    df = df[:30]
-    # print(df)
-    ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=80)
-    ax.axvspan(0, 0.06, alpha=0.2, color='r')
-    ax.set_title(f'active_{i-1}_epoch')
-    ax.set_xlabel('Entropy')
-    ax.set_ylabel('Iou')
 
+# ########### model uncertainty analysis #############
+# fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
+# plt.subplots_adjust(wspace=0.3, hspace=0.5)
+# deltas = np.arange(1, 7) * 0.01
+#
+# for i, ax, delta in zip(range(2, 8), axis.flat, deltas[::-1]):
+#     # print(i)
+#     df = pd.read_excel(path + 'active/delta_decay_high/r_high_decay.xlsx', sheet_name=f'active_e_{i}')
+#     df = df[:30]
+#     # print(df)
+#     ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=80)
+#     ax.axvspan(0, delta, alpha=0.2, color='r')
+#     ax.set_title(f'active_{i-1}_epoch_{delta}')
+#     ax.set_xlabel(r'Entropy')
+#     ax.set_ylabel(r'Iou')
+#
+# plt.show()
+# ############################################################################
+for i in np.arange(1, 7) * 0.01:
+    # print(i)
+    data = pd.read_excel(path + r'active/low/r_low_fixed.xlsx', sheet_name=f'active_data_{i}1')
+    # print(data)
+    o_iou = data['tree iou']
+    plt.plot(o_iou, marker='o', label=f'delta {i}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+
+data1 = pd.read_excel(path + r'active/delta_decay_low/r_low_decay.xlsx', sheet_name=f'active_data')
+o_iou = data1['tree iou']
+plt.plot(o_iou, marker='o', label=f'delta_decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+plt.xlabel('Epochs')
+plt.ylabel('Tree Iou')
+plt.legend()
 plt.show()
