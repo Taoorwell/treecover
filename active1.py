@@ -293,7 +293,7 @@ if __name__ == '__main__':
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
-                         'delta': [0, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
+                         'delta': [0., 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
     with pd.ExcelWriter(r'checkpoints/active/high/decay/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data')

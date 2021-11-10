@@ -194,7 +194,8 @@ if __name__ == '__main__':
     test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_image_path, test_mask_path)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
-    for delta in [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]:
+    # for delta in [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]:
+    for delta in [0.5, 0.1, 0.00]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(delta, initial_dataset, validation_dataset)
@@ -292,7 +293,6 @@ if __name__ == '__main__':
                                              delta=delta)
             tree_ious.append(tree_iou_1)
             o_ious.append(o_iou_1)
-            # delta = delta - 0.01
 
         data = pd.DataFrame({'active epoch': np.arange(1, 8),
                              'human label sample': human_labeled_r,
@@ -304,18 +304,5 @@ if __name__ == '__main__':
                             engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             data.to_excel(writer, sheet_name=f'active_data_{delta}')
         print(data)
-    # for im, ms, p, (index, rows), ids in zip(images, masks, prob, df.iterrows(), active2_path_dataset[2]):
-    #     if rows['Entropy1'] < 0.21:
-    #         fig, axs = plt.subplots(1, 3, figsize=(10, 5))
-    #         axs[0].imshow(im[:, :, :3])
-    #         axs[0].set_xlabel(f'image_{ids}')
-    #
-    #         axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
-    #         axs[1].set_xlabel(f'mask_{ids}')
-    #
-    #         axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
-    #         axs[2].set_xlabel(f'prob_{ids} \n model labeled' if ids in image_id_selected else f'drop')
-    #         axs[2].set_title(f"E1:{rows['Entropy1']:.4f} \n Var:{rows['Variance']:.4f}")
-    #         plt.show()
-        # bre
+
 
