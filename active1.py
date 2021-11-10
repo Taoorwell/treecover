@@ -262,6 +262,10 @@ if __name__ == '__main__':
 
             model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+            # tensorboard
+            tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=
+                                                                   f'tb_callback_dir/active/high/decay/unet_active_{i}',
+                                                                   histogram_freq=1)
 
             model.fit(new_dataset,
                       steps_per_epoch=len(new_dataset),
@@ -269,7 +273,7 @@ if __name__ == '__main__':
                       validation_data=validation_dataset,
                       validation_steps=len(validation_dataset),
                       verbose=0,
-                      callbacks=[learning_rate_scheduler]
+                      callbacks=[learning_rate_scheduler, tensorboard_callbacks]
                       )
 
             model.save(f'checkpoints/active/high/decay/unet_active_{i}')
