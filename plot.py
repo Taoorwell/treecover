@@ -114,18 +114,41 @@ path = r'../results/'
 #     ax.set_ylabel(r'Iou')
 #
 # plt.show()
-# ############################################################################
-for i in np.arange(1, 7) * 0.01:
-    # print(i)
-    data = pd.read_excel(path + r'active/low/r_low_fixed.xlsx', sheet_name=f'active_data_{i}1')
-    # print(data)
-    o_iou = data['tree iou']
-    plt.plot(o_iou, marker='o', label=f'delta {i}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 
-data1 = pd.read_excel(path + r'active/delta_decay_low/r_low_decay.xlsx', sheet_name=f'active_data')
-o_iou = data1['tree iou']
-plt.plot(o_iou, marker='o', label=f'delta_decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-plt.xlabel('Epochs')
-plt.ylabel('Tree Iou')
-plt.legend()
-plt.show()
+# #################### entropy and variance dual plot, acc as marker size ###################
+# fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
+# plt.subplots_adjust(wspace=0.3, hspace=0.5)
+# # deltas = np.arange(1, 7) * 0.01
+#
+# for i, ax in zip(range(2, 8), axis.flat):
+#     # print(i)
+#     df = pd.read_excel(path + 'active/high/r_high_fixed.xlsx', sheet_name=f'active_e_0.01_{i}')
+#     df = df[:30]
+#     # print(df)
+#     # iou_min = np.min(df['O_iou'])
+#     # iou_max = np.max(df['O_iou'])
+#     # iou_mean = np.mean(df['O_iou'])
+#     # s = 2*(df['O_iou'] - iou_min) / (iou_max - iou_min)
+#     # ax.scatter(df['Entropy1'], df['Variance'], marker='o', c='g', alpha=0.4, s=s*10)
+#     ax.scatter(df['Entropy1'], df['Variance'], marker='o', c='g', alpha=0.4, s=df['O_iou']*100)
+#     # ax.axvspan(0, 0.03, alpha=0.2, color='r')
+#     # ax.set_title(f'active_{i-1}_epoch_{delta}')
+#     ax.set_xlabel(r'Entropy')
+#     ax.set_ylabel(r'Variance')
+#
+# plt.show()
+# ############################################################################
+# for i in np.arange(1, 7) * 0.01:
+#     # print(i)
+#     data = pd.read_excel(path + r'active/low/r_low_fixed.xlsx', sheet_name=f'active_data_{i}1')
+#     # print(data)
+#     o_iou = data['tree iou']
+#     plt.plot(o_iou, marker='o', label=f'delta {i}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+#
+# data1 = pd.read_excel(path + r'active/delta_decay_low/r_low_decay.xlsx', sheet_name=f'active_data')
+# o_iou = data1['tree iou']
+# plt.plot(o_iou, marker='o', label=f'delta_decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.xlabel('Epochs')
+# plt.ylabel('Tree Iou')
+# plt.legend()
+# plt.show()
