@@ -150,6 +150,9 @@ def model_pred(model, images, masks, images_ids, inf, delta):
 
 
 if __name__ == '__main__':
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
     # some parameters
     seed = 2
     path = r'../quality/high/'
