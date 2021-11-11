@@ -99,22 +99,22 @@ path = r'../results/'
 # plt.show()
 
 # ########### model uncertainty analysis #############
-fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
-plt.subplots_adjust(wspace=0.3, hspace=0.5)
-deltas = np.arange(1, 7) * 0.01
-
-for i, ax, delta in zip(range(2, 8), axis.flat, deltas[::-1]):
-    # print(i)
-    df = pd.read_excel(path + 'active/high/r_fixed.xlsx', sheet_name=f'active_e_0.01_{i}')
-    df = df[:30]
-    # print(df)
-    ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=50)
-    ax.axvspan(0, 0.01, alpha=0.2, color='r')
-    ax.set_title(f'active_{i-1}_epoch_{0.01}')
-    ax.set_xlabel(r'Entropy')
-    ax.set_ylabel(r'overall Iou')
-
-plt.show()
+# fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
+# plt.subplots_adjust(wspace=0.3, hspace=0.5)
+# # deltas = np.arange(1, 7) * 0.01
+#
+# for i, ax in zip(range(2, 8), axis.flat):
+#     # print(i)
+#     df = pd.read_excel(path + 'active/high/r.xlsx', sheet_name=f'active_e_0.0_{i}')
+#     df = df[:30]
+#     # print(df)
+#     ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=50)
+#     ax.axvspan(-0.001, 0., alpha=0.2, color='r')
+#     ax.set_title(f'active_{i-1}_epoch_{0.}')
+#     ax.set_xlabel(r'Entropy')
+#     ax.set_ylabel(r'overall Iou')
+#
+# plt.show()
 
 # #################### entropy and variance dual plot, acc as marker size ###################
 # fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
@@ -138,18 +138,58 @@ plt.show()
 #     ax.set_ylabel(r'Variance')
 #
 # plt.show()
-# ############################################################################
-# for i in np.arange(1, 7) * 0.01:
+# ################### active learning + entropy selection + accuracy trend plot ###########################
+# e = np.arange(0, 7) * 0.01
+# e = np.append(e, [0.1, 0.5])
+# plt.figure(figsize=(12, 6))
+# for i in e:
 #     # print(i)
-#     data = pd.read_excel(path + r'active/high/r_fixed.xlsx', sheet_name=f'active_data_{i}')
+#     data = pd.read_excel(path + r'active/high/r.xlsx', sheet_name=f'active_data_{i}')
 #     # print(data)
-#     o_iou = data['overall iou']
+#     o_iou = data['tree iou']
 #     plt.plot(o_iou, marker='o', label=f'entropy {i}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 #
 # data1 = pd.read_excel(path + r'active/high/r_decay.xlsx', sheet_name=f'active_data')
-# o_iou = data1['overall iou']
+# o_iou = data1['tree iou']
 # plt.plot(o_iou, marker='o', label=f'entropy_decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 # plt.xlabel('Epochs')
-# plt.ylabel('overall Iou')
+# plt.ylabel('tree Iou')
 # plt.legend()
 # plt.show()
+# ################## high quality fine tuning model trained on low quality datasets #########
+mean_t, mean_o = [], []
+plt.figure(figsize=(12, 6))
+for p in range(0, 12, 2):
+    print(p)
+    df = pd.read_excel(path + 'fine/r.xlsx', sheet_name=f'fine_tune_{p}')
+    print(df)
+    n = df['N']
+    o_iou = df['o_iou1']
+    plt.scatter(np.arange(0, 30), o_iou, s=50, alpha=0.5, label=f'{(p*0.1):.0%}')
+    plt.xticks(np.arange(0, 30), n, fontsize=10, rotation=45)
+    plt.ylabel('Overall Iou', fontweight='bold')
+    plt.xlabel('Image Id', fontweight='bold')
+
+    mean_tree_iou = df['tree_iou1'].mean()
+    mean_o_iou = df['o_iou1'].mean()
+    mean_t.append(mean_tree_iou)
+    mean_o.append(mean_o_iou)
+# plt.figure(figsize=(12, 6))
+# barWidth = 0.25
+# bar1 = mean_t
+# bar2 = mean_o
+#
+# r1 = np.arange(0, 6, 1)
+# r2 = [x + barWidth for x in r1]
+#
+# plt.bar(r1, bar1, color='r', width=barWidth, edgecolor='white', label='Tree_iou', alpha=0.4)
+# plt.bar(r2, bar2, color='c', width=barWidth, edgecolor='white', label='Overall_iou', alpha=0.4)
+#
+#
+# plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], ['no fine tune',
+#                                                   '10%', '20%', '30%', '40%', '50%'])
+# plt.ylim(0.5, 0.9)
+# plt.xlabel('percentage of high quality datasets')
+# plt.ylabel('Iou')
+plt.legend()
+plt.show()
