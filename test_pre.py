@@ -1,12 +1,12 @@
 import tensorflow as tf
 from sys import stdout
 from dataloder import dataset, get_path
-# from utility import rgb_mask
+from utility import rgb_mask
 import time
 import numpy as np
 import pandas as pd
 from loss import dice_loss, iou, tree_iou
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 
 def compute_pyramid_patch_weight_loss(width, height):
@@ -225,12 +225,12 @@ if __name__ == '__main__':
     seed = 2
 
     # Trained Model loading
-    model_1 = tf.keras.models.load_model(r'checkpoints/unet_res_high_2_01_mc.h5',
+    model_1 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_low_2.h5',
                                          custom_objects={'dice_loss': dice_loss,
                                                          'iou': iou,
                                                          'tree_iou': tree_iou})
 
-    model_2 = tf.keras.models.load_model(r'checkpoints/ckpt-unet_res_low_2_mc.h5',
+    model_2 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_high_2.h5',
                                          custom_objects={'dice_loss': dice_loss,
                                                          'iou': iou,
                                                          'tree_iou': tree_iou})
@@ -296,45 +296,46 @@ if __name__ == '__main__':
         # output_2 = np.argmax(output_2, axis=-1)
 
         # Display the results
-        # plt.subplot(141)
-        # plt.imshow(image_arr[0, :, :, :3])
-        # plt.xlabel('image_{}'.format(int(i)))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.figure(figsize=(12, 3))
+        plt.subplot(141)
+        plt.imshow(image_arr[0, :, :, [4, 3, 2]].transpose(1, 2, 0))
+        plt.xlabel('image_{}'.format(int(i)))
+        plt.xticks([])
+        plt.yticks([])
 
-        # plt.subplot(142)
-        # plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
-        # plt.xlabel('mask_{}'.format(int(i)))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.subplot(142)
+        plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
+        plt.xlabel('mask_{}'.format(int(i)))
+        plt.xticks([])
+        plt.yticks([])
 
-        # plt.subplot(143)
-        # plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
-        # plt.xlabel('mask_pre_low')
-        # plt.title('T_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_1, acc_iou_2))
-        # plt.xticks([])
-        # plt.yticks([])
+        plt.subplot(143)
+        plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
+        plt.xlabel('mask_pre_low')
+        plt.title('tree_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_1, acc_iou_2))
+        plt.xticks([])
+        plt.yticks([])
 
-        # plt.subplot(144)
-        # plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
-        # plt.xlabel('mask_pre_high')
-        # plt.title('T_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_3, acc_iou_4))
-        # plt.xticks([])
-        # plt.yticks([])
-        # plt.savefig('../results/fig2/image_{}'.format(int(i)))
+        plt.subplot(144)
+        plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
+        plt.xlabel('mask_pre_high')
+        plt.title('tree_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_3, acc_iou_4))
+        plt.xticks([])
+        plt.yticks([])
+        plt.savefig(f'../results/high_low_2/fig/image_{i}')
         # plt.show()
         # Write out prediction to Tif file with coordinates
         # write_geotiff(output_path, output, image_path)
         # break
-        # print('Writing out finish!')
+        print(f'{i} Writing out finish!')
     # print(np.mean(acc1), np.mean(acc2))
     # print(acc1, acc2)
-    df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2, 'tree_iou2': acc3, 'o_iou2': acc4})
-    print(df)
-    print(np.mean(acc1), np.mean(acc2), np.mean(acc3), np.mean(acc4))
-    with pd.ExcelWriter(r'../results/r.xlsx', mode='a',
-                        engine='openpyxl', if_sheet_exists='replace') as writer:
-        df.to_excel(writer, sheet_name='high-low_mc_dropout')
+    # df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2, 'tree_iou2': acc3, 'o_iou2': acc4})
+    # print(df)
+    # print(np.mean(acc1), np.mean(acc2), np.mean(acc3), np.mean(acc4))
+    # with pd.ExcelWriter(r'../results/r.xlsx', mode='a',
+    #                     engine='openpyxl', if_sheet_exists='replace') as writer:
+    #     df.to_excel(writer, sheet_name='high-low_mc_dropout')
 
 
 

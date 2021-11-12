@@ -144,52 +144,75 @@ path = r'../results/'
 # plt.figure(figsize=(12, 6))
 # for i in e:
 #     # print(i)
-#     data = pd.read_excel(path + r'active/high/r.xlsx', sheet_name=f'active_data_{i}')
+#     data = pd.read_excel(path + r'active/low/r_fixed.xlsx', sheet_name=f'active_data_{i}')
 #     # print(data)
-#     o_iou = data['tree iou']
+#     o_iou = data['overall iou']
 #     plt.plot(o_iou, marker='o', label=f'entropy {i}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 #
-# data1 = pd.read_excel(path + r'active/high/r_decay.xlsx', sheet_name=f'active_data')
-# o_iou = data1['tree iou']
+# data1 = pd.read_excel(path + r'active/low/r_decay.xlsx', sheet_name=f'active_data')
+# o_iou = data1['overall iou']
 # plt.plot(o_iou, marker='o', label=f'entropy_decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-# plt.xlabel('Epochs')
-# plt.ylabel('tree Iou')
+# plt.xlabel('Epochs', fontweight='bold')
+# plt.ylabel('Overall Iou', fontweight='bold')
 # plt.legend()
 # plt.show()
 # ################## high quality fine tuning model trained on low quality datasets #########
-mean_t, mean_o = [], []
-plt.figure(figsize=(12, 6))
-for p in range(0, 12, 2):
-    print(p)
-    df = pd.read_excel(path + 'fine/r.xlsx', sheet_name=f'fine_tune_{p}')
-    print(df)
-    n = df['N']
-    o_iou = df['o_iou1']
-    plt.scatter(np.arange(0, 30), o_iou, s=50, alpha=0.5, label=f'{(p*0.1):.0%}')
-    plt.xticks(np.arange(0, 30), n, fontsize=10, rotation=45)
-    plt.ylabel('Overall Iou', fontweight='bold')
-    plt.xlabel('Image Id', fontweight='bold')
-
-    mean_tree_iou = df['tree_iou1'].mean()
-    mean_o_iou = df['o_iou1'].mean()
-    mean_t.append(mean_tree_iou)
-    mean_o.append(mean_o_iou)
-# plt.figure(figsize=(12, 6))
-# barWidth = 0.25
-# bar1 = mean_t
-# bar2 = mean_o
+# e_mean_t, e_mean_o = [], []
+# d_mean_t, d_mean_o = [], []
+# for p in range(0, 12, 2):
+#     df = pd.read_excel(path + 'fine/r.xlsx', sheet_name=f'fine_tune_{p}')
+#     df2 = pd.read_excel(path + 'fine/r.xlsx', sheet_name=f'fine_tune_{p}2')
+#     mean_t = df['tree_iou1'].mean()
+#     mean_o = df['o_iou1'].mean()
 #
-# r1 = np.arange(0, 6, 1)
-# r2 = [x + barWidth for x in r1]
+#     mean_t_2 = df2['tree_iou1'].mean()
+#     mean_o_2 = df2['o_iou1'].mean()
+#     e_mean_t.append(mean_t)
+#     e_mean_o.append(mean_o)
+#     d_mean_t.append(mean_t_2)
+#     d_mean_o.append(mean_o_2)
+# # print(e_mean_t, e_mean_o,
+# #       d_mean_t, d_mean_o)
 #
-# plt.bar(r1, bar1, color='r', width=barWidth, edgecolor='white', label='Tree_iou', alpha=0.4)
-# plt.bar(r2, bar2, color='c', width=barWidth, edgecolor='white', label='Overall_iou', alpha=0.4)
+# # plt.plot(e_mean_o, marker='o', label=f'encoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# # plt.plot(d_mean_o, marker='o', label=f'decoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 #
+# plt.plot(e_mean_t, marker='o', label=f'encoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.plot(d_mean_t, marker='o', label=f'decoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 #
+# # mean_t, mean_o = [], []
+# # plt.figure(figsize=(12, 6))
+# # for p in range(0, 12, 2):
+# #     print(p)
+# #     df = pd.read_excel(path + 'fine/r.xlsx', sheet_name=f'fine_tune_{p}')
+# #     print(df)
+# #     n = df['N']
+# #     o_iou = df['o_iou1']
+# #     plt.scatter(np.arange(0, 30), o_iou, s=50, alpha=0.5, label=f'{(p*0.1):.0%}')
+# #     plt.xticks(np.arange(0, 30), n, fontsize=10, rotation=45)
+# #     plt.ylabel('Overall Iou', fontweight='bold')
+# #     plt.xlabel('Image Id', fontweight='bold')
+# #
+# #     mean_tree_iou = df['tree_iou1'].mean()
+# #     mean_o_iou = df['o_iou1'].mean()
+# #     mean_t.append(mean_tree_iou)
+# #     mean_o.append(mean_o_iou)
+# # plt.figure(figsize=(12, 6))
+# # barWidth = 0.25
+# # bar1 = mean_t
+# # bar2 = mean_o
+# #
+# # r1 = np.arange(0, 6, 1)
+# # r2 = [x + barWidth for x in r1]
+# #
+# # plt.bar(r1, bar1, color='r', width=barWidth, edgecolor='white', label='Tree_iou', alpha=0.4)
+# # plt.bar(r2, bar2, color='c', width=barWidth, edgecolor='white', label='Overall_iou', alpha=0.4)
+# #
+# #
 # plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], ['no fine tune',
 #                                                   '10%', '20%', '30%', '40%', '50%'])
-# plt.ylim(0.5, 0.9)
-# plt.xlabel('percentage of high quality datasets')
-# plt.ylabel('Iou')
-plt.legend()
-plt.show()
+# # plt.ylim(0.5, 0.9)
+# plt.xlabel('percentage of high quality datasets', fontweight='bold')
+# plt.ylabel('Tree Iou', fontweight='bold')
+# plt.legend()
+# plt.show()
