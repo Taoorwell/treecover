@@ -6,11 +6,12 @@ from glob import glob
 import scipy.io as sio
 
 
-def load_path(path, mode):
-    # train, valid, test: 280, 20, 30
-    paths = [sorted(glob(p + '/*.tif')) for p in path]
-    length = len(paths[1])
-    np.random.seed(1)
+def get_path(path, mode='train', seed=1, active=0):
+    # get image and mask path according to the mode (train, valid, test)
+    images_path = sorted(glob(os.path.join(r'../quality/', r"images/*.tif")))
+    masks_path = sorted(glob(os.path.join(path, '*.tif')))
+    length = len(images_path)
+    np.random.seed(seed)
     idx = np.random.permutation(length)
     train_idx, test_idx = idx[:-30], idx[-30:]
     if mode == 'train':
@@ -19,9 +20,15 @@ def load_path(path, mode):
         idx = train_idx[280:]
     else:
         idx = test_idx
-    for i, p in enumerate(paths):
-        path[i] = [p[i] for i in idx]
-    return path
+
+    image_path = [images_path[i] for i in idx]
+    mask_path = [masks_path[i] for i in idx]
+    image_id = [int(im.split('_')[-1].split('.')[0]) for im in image_path]
+    if active != 0:
+        image_path = image_path[(active-1)*40:active*40]
+        mask_path = mask_path[(active-1)*40:active*40]
+        image_id = image_id[(active-1)*40:active*40]
+    return image_path, mask_path, image_id
 
 
 def get_image(raster_path):
@@ -104,14 +111,34 @@ palette = {0: (255, 255, 255),  # White
            15: (165, 42, 42),
            16: (175, 238, 238)}
 
-if __name__ == '__main__':
-    path = r'../quality/low'
-    paths = sorted(glob(path + '/*.tif'))
-    print(paths[0])
-    print(len(paths))
-    for p in paths:
-        print(p.split('_')[-1])
-        mask = get_image(p)
-    # path = r'../quality/high/mask_15.tif'
-    # mask_1 = get_image(path)
-    # print(mask_1.shape)
+# if __name__ == '__main__':
+    # path = r'../quality/high/'
+    # images_path, masks_path, images_id = get_path(path, mode='train', seed=2, active=0)
+    # print(len(images_path))
+    # for im, ms, ids in zip(images_path[80:120], masks_path[80:120], images_id[80:120]):
+    #     image = get_image(im)
+    #     mask = get_image(ms)
+    #     plt.subplot(121)
+    #     plt.imshow(image[:, :, [4, 3, 2]])
+    #     plt.xlabel(f'image_{int(ids)}')
+    #     plt.xticks([])
+    #     plt.yticks([])
+    #
+    #     plt.subplot(122)
+    #     plt.imshow(rgb_mask(mask[:, :, 1]))
+    #     plt.xlabel(f'mask_{int(ids)}')
+    #     plt.xticks([])
+    #     plt.yticks([])
+    #
+    #     plt.show()
+        # break
+    # image_201 = r'../quality/images/tile_201.tif'
+    # high_201 = r'../quality/high/mask_201.tif'
+    # low_201 = r'../quality/low/mask_201.tif'
+    # image_201, high_201, low_201 = get_image(image_201), get_image(high_201), get_image(low_201)
+    #
+    # plt.imshow(image_201[:, :, [4, 3, 2]])
+    # plt.imshow(rgb_mask(high_201[:, :, 1]), alpha=0.5)
+    # plt.xticks([])
+    # plt.yticks([])
+    # plt.show()

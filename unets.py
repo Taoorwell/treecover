@@ -164,11 +164,11 @@ def U_Net(input_shape, n_classes, rate=0., mc=False, recurrent=False, residual=F
 
 
 if __name__ == '__main__':
-    unet = U_Net(input_shape=(256, 256, 7), n_classes=2, rate=.0, mc=False, residual=True)
+    unet = U_Net(input_shape=(256, 256, 7), n_classes=2, rate=0.0, mc=False, residual=True)
     unet.summary()
-    for i, layer in enumerate(unet.layers[:48]):
-        print(f'{i}th layer:')
-        print(layer)
-        layer.trainable=False
-    unet.summary()
+    # for i, layer in enumerate(unet.layers[:48]):
+    #     print(f'{i}th layer:')
+    #     print(layer)
+    #     layer.trainable=False
+    # unet.summary()
 

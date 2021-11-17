@@ -1,7 +1,7 @@
 import tensorflow as tf
 from sys import stdout
 from dataloder import dataset, get_path
-from utility import rgb_mask
+from utility import rgb_mask, get_image
 import time
 import numpy as np
 import pandas as pd
@@ -225,109 +225,137 @@ if __name__ == '__main__':
     seed = 2
 
     # Trained Model loading
-    model_1 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_low_2.h5',
-                                         custom_objects={'dice_loss': dice_loss,
-                                                         'iou': iou,
-                                                         'tree_iou': tree_iou})
+    # model_1 = tf.keras.models.load_model(r'../results/active/high/decay/unet_active_2',
+    #                                      custom_objects={'dice_loss': dice_loss,
+    #                                                      'iou': iou,
+    #                                                      'tree_iou': tree_iou})
 
-    model_2 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_high_2.h5',
-                                         custom_objects={'dice_loss': dice_loss,
-                                                         'iou': iou,
-                                                         'tree_iou': tree_iou})
+    # model_2 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_high_2.h5',
+    #                                      custom_objects={'dice_loss': dice_loss,
+    #                                                      'iou': iou,
+    #                                                      'tree_iou': tree_iou})
 
     # Image loading for further prediction
+
+    # image_158_path = r'../quality/images/tile_26.tif'
+    # mask_158_path = r'../quality/high/mask_26.tif'
+    #
+    # image_158 = get_image(image_158_path)
+    # print(image_158.shape)
+    # mask_158 = get_image(mask_158_path)
+
     image_path_test, mask_path_test, image_id_test = get_path(path=path,
                                                               mode='test',
                                                               seed=seed,
                                                               active=0)
-    dataset = dataset(image_path_test,
-                      mask_path_test,
-                      mode='test',
-                      image_shape=(256, 256),
-                      batch_size=1)
 
-    acc1, acc2, acc3, acc4 = [], [], [], []
-    for (im, ms), i in zip(dataset, image_id_test):
-        # print(im.shape, ms.shape)
-        image_arr, mask_arr = im.numpy(), ms.numpy()
-        # print(image_arr.shape, mask_arr.shape)
-        # Prediction on large Image
-        outputs_1, outputs_2 = np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32), \
-                               np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32)
-        for inf in range(5):
-            output_1, _ = predict_on_array(model=model_1,
-                                           arr=image_arr[0],
-                                           in_shape=(256, 256, 7),
-                                           out_bands=2,
-                                           stride=200,
-                                           batchsize=20,
-                                           augmentation=True,
-                                           verbose=False,
-                                           report_time=True)
-
-            output_2, _ = predict_on_array(model=model_2,
-                                           arr=image_arr[0],
-                                           in_shape=(256, 256, 7),
-                                           out_bands=2,
-                                           stride=200,
-                                           batchsize=20,
-                                           augmentation=True,
-                                           verbose=False,
-                                           report_time=True)
-            outputs_1[inf] = output_1
-            outputs_2[inf] = output_2
-
-        # output_1 = (output_1 > 0.5) * 1
-        output_1 = np.mean(outputs_1, axis=0)
-        output_2 = np.mean(outputs_2, axis=0)
-
-        acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
-        acc_iou_2 = iou(mask_arr[0], output_1)
-        acc1.append(acc_iou_1.numpy())
-        acc2.append(acc_iou_2.numpy())
-
-        # output_1 = (output_1 > 0.5) * 1
-
-        # output_2 = (output_2 > 0.5) * 1
-        acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
-        acc_iou_4 = iou(mask_arr[0], output_2)
-        acc3.append(acc_iou_3.numpy())
-        acc4.append(acc_iou_4.numpy())
-        # output_2 = np.argmax(output_2, axis=-1)
-
-        # Display the results
-        plt.figure(figsize=(12, 3))
-        plt.subplot(141)
-        plt.imshow(image_arr[0, :, :, [4, 3, 2]].transpose(1, 2, 0))
-        plt.xlabel('image_{}'.format(int(i)))
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.subplot(142)
-        plt.imshow(rgb_mask(np.argmax(mask_arr[0], axis=-1)))
-        plt.xlabel('mask_{}'.format(int(i)))
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.subplot(143)
-        plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
-        plt.xlabel('mask_pre_low')
-        plt.title('tree_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_1, acc_iou_2))
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.subplot(144)
-        plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
-        plt.xlabel('mask_pre_high')
-        plt.title('tree_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_3, acc_iou_4))
-        plt.xticks([])
-        plt.yticks([])
-        plt.savefig(f'../results/high_low_2/fig/image_{i}')
-        # plt.show()
-        # Write out prediction to Tif file with coordinates
-        # write_geotiff(output_path, output, image_path)
+    for i in range(2, 8, 1):
+        model = tf.keras.models.load_model(f'../results/active/high/decay/unet_active_{i}',
+                                           custom_objects={'dice_loss': dice_loss,
+                                                           'iou': iou,
+                                                           'tree_iou': tree_iou})
+        acc1, acc2 = [], []
+        for image_path, mask_path, image_id in zip(image_path_test, mask_path_test, image_id_test):
+            image = get_image(image_path)
+            mask = get_image(mask_path)
+            pre_158 = predict_on_array(model=model,
+                                       arr=image,
+                                       in_shape=(256, 256, 7),
+                                       out_bands=2,
+                                       stride=200,
+                                       batchsize=20,
+                                       augmentation=True,
+                                       verbose=False,
+                                       report_time=False)
+        # acc1, acc2, acc3, acc4 = [], [], [], []
+        # for (im, ms), i in zip(dataset, image_id_test):
+        #     # print(im.shape, ms.shape)
+        #     image_arr, mask_arr = im.numpy(), ms.numpy()
+        #     # print(image_arr.shape, mask_arr.shape)
+        #     # Prediction on large Image
+        #     outputs_1, outputs_2 = np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32), \
+        #                            np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32)
+        #     for inf in range(5):
+        #         output_1, _ = predict_on_array(model=model_1,
+        #                                        arr=image_arr[0],
+        #                                        in_shape=(256, 256, 7),
+        #                                        out_bands=2,
+        #                                        stride=200,
+        #                                        batchsize=20,
+        #                                        augmentation=True,
+        #                                        verbose=False,
+        #                                        report_time=True)
+        #
+        #         output_2, _ = predict_on_array(model=model_2,
+        #                                        arr=image_arr[0],
+        #                                        in_shape=(256, 256, 7),
+        #                                        out_bands=2,
+        #                                        stride=200,
+        #                                        batchsize=20,
+        #                                        augmentation=True,
+        #                                        verbose=False,
+        #                                        report_time=True)
+        #         outputs_1[inf] = output_1
+        #         outputs_2[inf] = output_2
+        #
+        #     # output_1 = (output_1 > 0.5) * 1
+        #     output_1 = np.mean(outputs_1, axis=0)
+        #     output_2 = np.mean(outputs_2, axis=0)
+        #
+        #     acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
+        #     acc_iou_2 = iou(mask_arr[0], output_1)
+        #     acc1.append(acc_iou_1.numpy())
+        #     acc2.append(acc_iou_2.numpy())
+        #
+        #     # output_1 = (output_1 > 0.5) * 1
+        #
+        #     # output_2 = (output_2 > 0.5) * 1
+        #     acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
+        #     acc_iou_4 = iou(mask_arr[0], output_2)
+        #     acc3.append(acc_iou_3.numpy())
+        #     acc4.append(acc_iou_4.numpy())
+        #     # output_2 = np.argmax(output_2, axis=-1)
+        #
+        #     # Display the results
+        #     plt.figure(figsize=(12, 3))
+            acc_iou_1 = iou(mask[:, :, 1], pre_158[:, :, 1]).numpy()
+            acc_iou_2 = iou(mask, pre_158).numpy()
+            # print(acc_iou_1, acc_iou_2)
+            acc1.append(acc_iou_1)
+            acc2.append(acc_iou_2)
+        df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2})
+        print(df)
+        print(np.mean(acc1), np.mean(acc2))
+        with pd.ExcelWriter(r'../results/active/high/r_decay.xlsx', mode='a',
+                            engine='openpyxl', if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=f'high_decay_active_{i}')
+        del model
+        # ax.imshow(rgb_mask(np.argmax(pre_158, axis=-1)))
+        # ax.set_xticks([])
+        # ax.set_yticks([])
+        # ax.set_xlabel(f'{(0.1*(i+1)):.0%} high')
+        # ax.set_title(f'tree: {acc_iou_1:.2%}\n overall: {acc_iou_2:.2%}')
         # break
-        print(f'{i} Writing out finish!')
+    # plt.show()
+    #     plt.subplot(143)
+    #     plt.imshow(rgb_mask(np.argmax(output_1, axis=-1)))
+    #     plt.xlabel('mask_pre_low')
+    #     plt.title('tree_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_1, acc_iou_2))
+    #     plt.xticks([])
+    #     plt.yticks([])
+    #
+    #     plt.subplot(144)
+    #     plt.imshow(rgb_mask(np.argmax(output_2, axis=-1)))
+    #     plt.xlabel('mask_pre_high')
+    #     plt.title('tree_iou:{:.2%}\n Iou:{:.2%}'.format(acc_iou_3, acc_iou_4))
+    #     plt.xticks([])
+    #     plt.yticks([])
+    #     plt.savefig(f'../results/high_low_2/fig/image_{i}')
+    #     # plt.show()
+    #     # Write out prediction to Tif file with coordinates
+    #     # write_geotiff(output_path, output, image_path)
+    #     # break
+    #     print(f'{i} Writing out finish!')
     # print(np.mean(acc1), np.mean(acc2))
     # print(acc1, acc2)
     # df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2, 'tree_iou2': acc3, 'o_iou2': acc4})
