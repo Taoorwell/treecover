@@ -109,6 +109,7 @@ def model_test(model, test_datasets, image_id_test, p):
 
 if __name__ == '__main__':
     path = r'../quality/'
+    freeze = False
     # gpus = tf.config.experimental.list_physical_devices('GPU')
     # for gpu in gpus:
     #     tf.config.experimental.set_memory_growth(gpu, True)
@@ -148,22 +149,24 @@ if __name__ == '__main__':
         print('initial model training and loading successful')
 
         # initial model prediction on test dataset
-        if p == 0.1:
-            model_test(model, test_datasets, image_id_test, p=0.0)
+        # if p == 0.1:
+        #     model_test(model, test_datasets, image_id_test, p=0.0)
 
         # model fine tuning phrase
         # freeze the encoder part of trained Unet
-        for layer in model.layers[:48]:
-            layer.trainable = False
-        strategy = tf.distribute.MirroredStrategy()
-        with strategy.scope():
-            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+        if freeze is True:
+            for layer in model.layers[:48]:
+                layer.trainable = False
+
+        # strategy = tf.distribute.MirroredStrategy()
+        # with strategy.scope():
+        model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
         model.summary()
 
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
         # tensorboard
         tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-            log_dir=f'tb_callback_dir/fine/unet_140_fine_{int(p*10)}',
+            log_dir=f'tb_callback_dir/fine/no_freeze/unet_140_fine_{int(p*10)}',
             histogram_freq=1)
         model.fit(fine_datasets,
                   steps_per_epoch=len(fine_datasets),
@@ -174,7 +177,7 @@ if __name__ == '__main__':
                   callbacks=[learning_rate_scheduler, tensorboard_callbacks]
                   )
 
-        model.save(f'checkpoints/fine/unet_140_fine_{int(p*10)}')
+        model.save(f'checkpoints/fine/no_freeze/unet_140_fine_{int(p*10)}')
         print(f'unet_140_fine_{int(p*10)} saved!')
         model_test(model, test_datasets, image_id_test, p=p)
 
