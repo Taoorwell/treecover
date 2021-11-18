@@ -9,7 +9,7 @@ import tensorflow as tf
 # from loss import log_conv
 
 
-def get_path(path, mode='train', seed=1, active=0):
+def get_path(path, mode='train', seed=2, active=0):
     # get image and mask path according to the mode (train, valid, test)
     images_path = sorted(glob(os.path.join(r'../quality/', r"images/*.tif")))
     masks_path = sorted(glob(os.path.join(path, '*.tif')))

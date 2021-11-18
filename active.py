@@ -22,7 +22,7 @@ def lr_cosine_decay(e):
     return initial_learning_rate * cosine_decay
 
 
-def initial_model_train(delta, initial_dataset, validation_dataset):
+def initial_model_train(initial_dataset, validation_dataset):
     if os.path.exists(f'checkpoints/active/high/unet_active_1'):
         model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     for delta in [0.5, 0.1, 0.00]:
         tree_ious, o_ious = [], []
 
-        model = initial_model_train(delta, initial_dataset, validation_dataset)
+        model = initial_model_train(initial_dataset, validation_dataset)
         print('initial model loaded successfully')
         print('initial model prediction on test datasets')
         i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1,

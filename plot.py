@@ -159,27 +159,40 @@ path = r'../results/'
 # ################## high quality fine tuning model trained on low quality datasets #########
 # e_mean_t, e_mean_o = [], []
 # d_mean_t, d_mean_o = [], []
+# n_mean_t, n_mean_o = [], []
+#
 # for p in range(0, 12, 2):
 #     df = pd.read_excel(path + 'fine/encoder_freeze/r_encoder.xlsx', sheet_name=f'fine_{p}')
 #     df2 = pd.read_excel(path + 'fine/decoder_freeze/r_decoder.xlsx', sheet_name=f'fine_{p}')
+#     df3 = pd.read_excel(path + 'fine/no_freeze/no_freeze.xlsx', sheet_name=f'fine_{p}')
+#
 #     mean_t = df['tree_iou1'].mean()
 #     mean_o = df['o_iou1'].mean()
 #
 #     mean_t_2 = df2['tree_iou1'].mean()
 #     mean_o_2 = df2['o_iou1'].mean()
+#
+#     mean_t_3 = df3['tree_iou1'].mean()
+#     mean_o_3 = df3['o_iou1'].mean()
+#
 #     e_mean_t.append(mean_t)
 #     e_mean_o.append(mean_o)
 #     d_mean_t.append(mean_t_2)
 #     d_mean_o.append(mean_o_2)
-# # print(e_mean_t, e_mean_o,
-# #       d_mean_t, d_mean_o)
-#
+#     n_mean_t.append(mean_t_3)
+#     n_mean_o.append(mean_o_3)
+# print(e_mean_t, e_mean_o,
+#       d_mean_t, d_mean_o)
+
 # plt.plot(e_mean_o, marker='o', label=f'encoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 # plt.plot(d_mean_o, marker='o', label=f'decoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.plot(n_mean_o, marker='o', label=f'no freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+
 #
 # plt.plot(e_mean_t, marker='o', label=f'encoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 # plt.plot(d_mean_t, marker='o', label=f'decoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-#
+# plt.plot(n_mean_t, marker='o', label=f'no freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+
 # mean_t, mean_o = [], []
 # plt.figure(figsize=(12, 6))
 # for p in range(0, 12, 2):

@@ -248,9 +248,9 @@ if __name__ == '__main__':
                                                               mode='test',
                                                               seed=seed,
                                                               active=0)
-
-    for i in range(2, 8, 1):
-        model = tf.keras.models.load_model(f'../results/active/high/decay/unet_active_{i}',
+    mean_t, mean_o = [], []
+    for i in range(2, 12, 2):
+        model = tf.keras.models.load_model(f'../results/fine/no_freeze/unet_140_fine_{i}',
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
@@ -326,10 +326,16 @@ if __name__ == '__main__':
         df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2})
         print(df)
         print(np.mean(acc1), np.mean(acc2))
-        with pd.ExcelWriter(r'../results/active/high/r_decay.xlsx', mode='a',
+        with pd.ExcelWriter(r'../results/fine/no_freeze/no_freeze.xlsx', mode='a',
                             engine='openpyxl', if_sheet_exists='replace') as writer:
-            df.to_excel(writer, sheet_name=f'high_decay_active_{i}')
+            df.to_excel(writer, sheet_name=f'fine_{i}')
         del model
+        mean_t.append(np.mean(acc1))
+        mean_o.append(np.mean(acc2))
+    df_o = pd.DataFrame({'N': np.arange(2, 12, 2), 'mean_tree_iou1': mean_t, 'mean_o_iou1': mean_o})
+    with pd.ExcelWriter(r'../results/fine/no_freeze/no_freeze.xlsx', mode='a',
+                        engine='openpyxl', if_sheet_exists='replace') as writer:
+        df_o.to_excel(writer, sheet_name=f'fine_no_freeze')
         # ax.imshow(rgb_mask(np.argmax(pre_158, axis=-1)))
         # ax.set_xticks([])
         # ax.set_yticks([])
