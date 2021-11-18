@@ -3,39 +3,26 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from glob import glob
-from dataloder import dataset
+from dataloder import dataset, get_path
 from unets import U_Net
 from test_pre import predict_on_array
 from loss import dice_loss, iou, tree_iou
 
 
-def get_fine_path(path, mode='train', seed=2, p=0.0):
+def get_fine_path(seed=3, p=0.0):
     # get image and mask path according to the mode (train, valid, test)
-    images_path = sorted(glob(os.path.join(path, r"images/*.tif")))
-    high_masks_path = sorted(glob(os.path.join(path, r'high/*.tif')))
-    low_masks_path = sorted(glob(os.path.join(path, r'low/*.tif')))
+    images_path, low_masks_path, _ = get_path(path='../quality/low/', mode='train', seed=2)
+    _, high_masks_path, _ = get_path(path='../quality/high/', mode='train', seed=2)
 
-    length = len(images_path)
+    low_image_path, low_mask_path = images_path[:140], low_masks_path[:140]
 
     np.random.seed(seed)
-    idx = np.random.permutation(length)
+    s = np.random.choice(140, size=int(p*140))
 
-    train_idx, test_idx = idx[:-30], idx[-30:]
-    if mode == 'train':
-        idx = train_idx[:280]
-    elif mode == 'valid':
-        idx = train_idx[280:]
-    else:
-        idx = test_idx
-    image_path = [images_path[i] for i in idx]
-    high_mask_path = [high_masks_path[i] for i in idx]
-    low_mask_path = [low_masks_path[i] for i in idx]
-    if p != 0.0:
-        low_image_path, low_mask_path = image_path[:140], low_mask_path[:140]
-        high_image_path, high_mask_path = image_path[140: int(140+p*140)], high_mask_path[140: int(140+p*140)]
-        return low_image_path, low_mask_path, high_image_path, high_mask_path
-    else:
-        return image_path, high_mask_path
+    high_image_path = np.array(images_path[140:])[s]
+    high_mask_path = np.array(high_masks_path[140:])[s]
+
+    return low_image_path, low_mask_path, high_image_path.tolist(), high_mask_path.tolist()
 
 
 def lr_cosine_decay(e):
@@ -110,75 +97,74 @@ def model_test(model, test_datasets, image_id_test, p):
 if __name__ == '__main__':
     path = r'../quality/'
     freeze = False
-    # gpus = tf.config.experimental.list_physical_devices('GPU')
-    # for gpu in gpus:
-    #     tf.config.experimental.set_memory_growth(gpu, True)
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
     epochs = 100
     initial_learning_rate = 0.00001
 
-    valid_image_path, valid_mask_path = get_fine_path(path, mode='valid', seed=2)
-    test_image_path, test_mask_path = get_fine_path(path, mode='test', seed=2)
-    image_id_test = [int(p.split('_')[-1].split('.')[0]) for p in test_mask_path]
+    valid_image_path, valid_mask_path, _ = get_path(path, mode='valid', seed=2)
+    # test_image_path, test_mask_path = get_fine_path(path, mode='test', seed=2)
+    # image_id_test = [int(p.split('_')[-1].split('.')[0]) for p in test_mask_path]
 
     valid_datasets = dataset(valid_image_path,
                              valid_mask_path,
                              mode='train',
                              batch_size=10)
 
-    test_datasets = dataset(test_image_path,
-                            test_mask_path,
-                            mode='train',
-                            batch_size=1)
+    # test_datasets = dataset(test_image_path,
+    #                         test_mask_path,
+    #                         mode='train',
+    #                         batch_size=1)
 
-    for p in np.arange(0.2, 1.2, 0.2):
-        print(f'{p:.0%} high quality mask fine tuning...')
-        train_image_path, train_mask_path, fine_image_path, fine_mask_path = get_fine_path(path,
-                                                                                           mode='train',
-                                                                                           seed=2,
-                                                                                           p=p)
-        initial_datasets = dataset(train_image_path,
-                                   train_mask_path,
-                                   mode='train',
-                                   batch_size=4)
-        fine_datasets = dataset(fine_image_path,
-                                fine_mask_path,
-                                mode='train',
-                                batch_size=4)
+    for p in np.arange(0.2, 1.0, 0.2):
+        for se in np.arange(3, 8):
+            print(f'{p:.0%}  {se} high quality mask fine tuning...')
+            train_image_path, train_mask_path, fine_image_path, fine_mask_path = get_fine_path(seed=se,
+                                                                                               p=p)
+            initial_datasets = dataset(train_image_path,
+                                       train_mask_path,
+                                       mode='train',
+                                       batch_size=4)
+            fine_datasets = dataset(fine_image_path,
+                                    fine_mask_path,
+                                    mode='train',
+                                    batch_size=4)
 
-        model = initial_model(initial_datasets, valid_datasets)
-        print('initial model training and loading successful')
+            model = initial_model(initial_datasets, valid_datasets)
+            print('initial model training and loading successful')
 
-        # initial model prediction on test dataset
-        # if p == 0.1:
-        #     model_test(model, test_datasets, image_id_test, p=0.0)
+            # initial model prediction on test dataset
+            # if p == 0.1:
+            #     model_test(model, test_datasets, image_id_test, p=0.0)
 
-        # model fine tuning phrase
-        # freeze the encoder part of trained Unet
-        if freeze is True:
-            for layer in model.layers[:48]:
-                layer.trainable = False
+            # model fine tuning phrase
+            # freeze the encoder part of trained Unet
+            if freeze is True:
+                for layer in model.layers[:48]:
+                    layer.trainable = False
 
-        # strategy = tf.distribute.MirroredStrategy()
-        # with strategy.scope():
-        model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-        model.summary()
+            # strategy = tf.distribute.MirroredStrategy()
+            # with strategy.scope():
+            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+            model.summary()
 
-        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-        # tensorboard
-        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-            log_dir=f'tb_callback_dir/fine/no_freeze/unet_140_fine_{int(p*10)}',
-            histogram_freq=1)
-        model.fit(fine_datasets,
-                  steps_per_epoch=len(fine_datasets),
-                  epochs=epochs,
-                  validation_data=valid_datasets,
-                  validation_steps=len(valid_datasets),
-                  verbose=0,
-                  callbacks=[learning_rate_scheduler, tensorboard_callbacks]
-                  )
+            learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+            # tensorboard
+            tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+                log_dir=f'tb_callback_dir/fine/no_freeze/random/unet_140_fine_{int(p*10)}_{se}',
+                histogram_freq=1)
+            model.fit(fine_datasets,
+                      steps_per_epoch=len(fine_datasets),
+                      epochs=epochs,
+                      validation_data=valid_datasets,
+                      validation_steps=len(valid_datasets),
+                      verbose=0,
+                      callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+                      )
 
-        model.save(f'checkpoints/fine/no_freeze/unet_140_fine_{int(p*10)}')
-        print(f'unet_140_fine_{int(p*10)} saved!')
-        model_test(model, test_datasets, image_id_test, p=p)
+            model.save(f'checkpoints/fine/no_freeze/random/unet_140_fine_{int(p*10)}_{se}')
+            print(f'unet_140_fine_{int(p*10)}_{se} saved!')
+            # model_test(model, test_datasets, image_id_test, p=p)
 
-        del model
+            del model
