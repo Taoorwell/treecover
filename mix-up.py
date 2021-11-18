@@ -35,7 +35,6 @@ if __name__ == '__main__':
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
-    path = r'../quality/'
     # p = 0.9
     epochs = 300
     n_classes = 2
@@ -57,7 +56,7 @@ if __name__ == '__main__':
 
     for p in np.arange(0.2, 1.0, 0.2):
         for se in np.arange(3, 8):
-            print(f'{p:.0%} high quality mask training...')
+            print(f'{p:.0%} {se} high quality mask training...')
             train_image_path, train_mask_path = get_mix_path(seed=se, p=p)
             train_datasets = dataset(train_image_path,
                                      train_mask_path,
@@ -92,6 +91,7 @@ if __name__ == '__main__':
                       epochs=epochs,
                       validation_data=valid_datasets,
                       validation_steps=len(valid_datasets),
+                      verbose=0,
                       callbacks=[learning_rate_scheduler, tensorboard_callbacks])
             model.save(f'checkpoints/mix/random/unet_mix_mask_{int(p*10)}_{se}')
             # model prediction on test dataset
@@ -125,3 +125,5 @@ if __name__ == '__main__':
             #                     engine='openpyxl', if_sheet_exists='replace') as writer:
             #     df.to_excel(writer, sheet_name=f'mix_mask_{int(p*10)}')
             del model
+            print(f'{p:.0%} {se} high quality mask training Finished...')
+
