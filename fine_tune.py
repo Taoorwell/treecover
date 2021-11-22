@@ -95,8 +95,8 @@ def model_test(model, test_datasets, image_id_test, p):
 
 
 if __name__ == '__main__':
-    path = r'../quality/'
-    freeze = False
+    path = r'../quality/high/'
+    freeze = True
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -117,8 +117,8 @@ if __name__ == '__main__':
     #                         mode='train',
     #                         batch_size=1)
 
-    for p in np.arange(0.2, 1.0, 0.2):
-        for se in np.arange(3, 8):
+    for p in np.arange(1.0, 1.2, 0.2):
+        for se in np.arange(3, 4):
             print(f'{p:.0%}  {se} high quality mask fine tuning...')
             train_image_path, train_mask_path, fine_image_path, fine_mask_path = get_fine_path(seed=se,
                                                                                                p=p)
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             # model fine tuning phrase
             # freeze the encoder part of trained Unet
             if freeze is True:
-                for layer in model.layers[:48]:
+                for layer in model.layers[48:]:
                     layer.trainable = False
 
             # strategy = tf.distribute.MirroredStrategy()
@@ -152,7 +152,7 @@ if __name__ == '__main__':
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
             # tensorboard
             tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-                log_dir=f'tb_callback_dir/fine/no_freeze/random/unet_140_fine_{int(p*10)}_{se}',
+                log_dir=f'tb_callback_dir/fine/de_freeze/random/unet_140_fine_{int(p*10)}_{se}',
                 histogram_freq=1)
             model.fit(fine_datasets,
                       steps_per_epoch=len(fine_datasets),
@@ -163,7 +163,7 @@ if __name__ == '__main__':
                       callbacks=[learning_rate_scheduler, tensorboard_callbacks]
                       )
 
-            model.save(f'checkpoints/fine/no_freeze/random/unet_140_fine_{int(p*10)}_{se}')
+            model.save(f'checkpoints/fine/de_freeze/random/unet_140_fine_{int(p*10)}_{se}')
             print(f'unet_140_fine_{int(p*10)}_{se} saved!')
             # model_test(model, test_datasets, image_id_test, p=p)
 

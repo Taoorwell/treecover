@@ -80,20 +80,25 @@ path = r'../results/'
 # # plt.show()
 #
 # # #########################group bar plot for mix datasets on test images (30) ###########
+# df = pd.read_excel(path + 'mix/random/mix_random.xlsx', sheet_name=f'mix')
 # plt.figure(figsize=(12, 6))
 # barWidth = 0.25
-# bar1 = m_tree_iou
-# bar2 = m_o_iou
+# bar1 = df['mean_tree_iou1']
+# bar2 = df['mean_o_iou1']
+# y_error1 = df['std1']
+# y_error2 = df['std2']
 #
-# r1 = np.arange(0, 9, 1)
+# r1 = np.arange(0, 6, 1)
 # r2 = [x + barWidth for x in r1]
 #
-# plt.bar(r1, bar1, color='r', width=barWidth, edgecolor='white', label='Tree_iou', alpha=0.4)
-# plt.bar(r2, bar2, color='c', width=barWidth, edgecolor='white', label='Overall_iou', alpha=0.4)
+# plt.bar(r1, bar1, yerr=y_error1, align='center', ecolor='blue', capsize=5, color='r', width=barWidth,
+#         edgecolor='white', label='Tree_iou', alpha=0.4)
+# plt.bar(r2, bar2, yerr=y_error2, align='center', ecolor='blue', capsize=5, color='c', width=barWidth,
+#         edgecolor='white', label='Overall_iou', alpha=0.4)
 #
 # plt.xlabel('Dataset', fontweight='bold')
 # plt.ylabel("Iou", fontweight='bold')
-# plt.xticks([r+0.15 for r in np.arange(0, 9, 1)], [f'{p:.0%} high\n{(1-p):.0%} low' for p in np.arange(0.1, 1.0, 0.1)])
+# plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], [f'{p:.0%} high\n{(1-p):.0%} low' for p in np.arange(0.0, 1.2, 0.2)])
 # plt.ylim(0.5, 0.9)
 # plt.legend(loc=2, prop={'size': 8})
 # plt.show()
@@ -183,15 +188,30 @@ path = r'../results/'
 #     n_mean_o.append(mean_o_3)
 # print(e_mean_t, e_mean_o,
 #       d_mean_t, d_mean_o)
+df1 = pd.read_excel(path + 'fine/random/fine_random.xlsx', sheet_name=f'en_freeze')
+df2 = pd.read_excel(path + 'fine/random/fine_random.xlsx', sheet_name=f'de_freeze')
+df3 = pd.read_excel(path + 'fine/random/fine_random.xlsx', sheet_name=f'no_freeze')
 
-# plt.plot(e_mean_o, marker='o', label=f'encoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-# plt.plot(d_mean_o, marker='o', label=f'decoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-# plt.plot(n_mean_o, marker='o', label=f'no freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+plt.errorbar(np.arange(0, 6, 1), df1['o_iou1'], yerr=df1['std2'], capsize=3, marker='o',
+             label=f'encoder freeze',
+             linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+plt.errorbar(np.arange(0, 6, 1), df2['o_iou1'], yerr=df2['std2'], capsize=3, marker='o',
+             label=f'decoder freeze',
+             linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+plt.errorbar(np.arange(0, 6, 1), df3['o_iou1'], yerr=df3['std2'], capsize=3, marker='o',
+             label=f'no freeze',
+             linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 
 #
-# plt.plot(e_mean_t, marker='o', label=f'encoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-# plt.plot(d_mean_t, marker='o', label=f'decoder freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-# plt.plot(n_mean_t, marker='o', label=f'no freeze', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.errorbar(np.arange(0, 6, 1), df1['tree_iou1'], yerr=df1['std1'], capsize=3, marker='o',
+#              label=f'encoder freeze',
+#              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.errorbar(np.arange(0, 6, 1), df2['tree_iou1'], yerr=df2['std1'], capsize=3, marker='o',
+#              label=f'decoder freeze',
+#              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.errorbar(np.arange(0, 6, 1), df3['tree_iou1'], yerr=df3['std1'], capsize=3, marker='o',
+#              label=f'no freeze',
+#              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 
 # mean_t, mean_o = [], []
 # plt.figure(figsize=(12, 6))
@@ -222,10 +242,10 @@ path = r'../results/'
 # # plt.bar(r2, bar2, color='c', width=barWidth, edgecolor='white', label='Overall_iou', alpha=0.4)
 # #
 # #
-# plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], ['no fine tune',
-#                                                   '10%', '20%', '30%', '40%', '50%'])
+plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], ['no fine tune',
+                                                  '10%', '20%', '30%', '40%', '50%'])
 # # # plt.ylim(0.5, 0.9)
-# plt.xlabel('percentage of high quality datasets', fontweight='bold')
-# plt.ylabel('Tree Iou', fontweight='bold')
-# plt.legend()
-# plt.show()
+plt.xlabel('percentage of high quality datasets', fontweight='bold')
+plt.ylabel('Overall Iou', fontweight='bold')
+plt.legend()
+plt.show()
