@@ -5,6 +5,9 @@ from dataloder import dataset, get_path
 
 if __name__ == '__main__':
     # some parameters
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
     path = r'../quality/high/'
     seed = 2
     width = 256
