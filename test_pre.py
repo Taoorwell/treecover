@@ -248,94 +248,97 @@ if __name__ == '__main__':
                                                               mode='test',
                                                               seed=seed,
                                                               active=0)
-    mean_t, mean_o = [], []
-    for i in range(2, 12, 2):
-        model = tf.keras.models.load_model(f'../results/fine/no_freeze/unet_140_fine_{i}',
-                                           custom_objects={'dice_loss': dice_loss,
-                                                           'iou': iou,
-                                                           'tree_iou': tree_iou})
-        acc1, acc2 = [], []
-        for image_path, mask_path, image_id in zip(image_path_test, mask_path_test, image_id_test):
-            image = get_image(image_path)
-            mask = get_image(mask_path)
-            pre_158 = predict_on_array(model=model,
-                                       arr=image,
-                                       in_shape=(256, 256, 7),
-                                       out_bands=2,
-                                       stride=200,
-                                       batchsize=20,
-                                       augmentation=True,
-                                       verbose=False,
-                                       report_time=False)
-        # acc1, acc2, acc3, acc4 = [], [], [], []
-        # for (im, ms), i in zip(dataset, image_id_test):
-        #     # print(im.shape, ms.shape)
-        #     image_arr, mask_arr = im.numpy(), ms.numpy()
-        #     # print(image_arr.shape, mask_arr.shape)
-        #     # Prediction on large Image
-        #     outputs_1, outputs_2 = np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32), \
-        #                            np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32)
-        #     for inf in range(5):
-        #         output_1, _ = predict_on_array(model=model_1,
-        #                                        arr=image_arr[0],
-        #                                        in_shape=(256, 256, 7),
-        #                                        out_bands=2,
-        #                                        stride=200,
-        #                                        batchsize=20,
-        #                                        augmentation=True,
-        #                                        verbose=False,
-        #                                        report_time=True)
-        #
-        #         output_2, _ = predict_on_array(model=model_2,
-        #                                        arr=image_arr[0],
-        #                                        in_shape=(256, 256, 7),
-        #                                        out_bands=2,
-        #                                        stride=200,
-        #                                        batchsize=20,
-        #                                        augmentation=True,
-        #                                        verbose=False,
-        #                                        report_time=True)
-        #         outputs_1[inf] = output_1
-        #         outputs_2[inf] = output_2
-        #
-        #     # output_1 = (output_1 > 0.5) * 1
-        #     output_1 = np.mean(outputs_1, axis=0)
-        #     output_2 = np.mean(outputs_2, axis=0)
-        #
-        #     acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
-        #     acc_iou_2 = iou(mask_arr[0], output_1)
-        #     acc1.append(acc_iou_1.numpy())
-        #     acc2.append(acc_iou_2.numpy())
-        #
-        #     # output_1 = (output_1 > 0.5) * 1
-        #
-        #     # output_2 = (output_2 > 0.5) * 1
-        #     acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
-        #     acc_iou_4 = iou(mask_arr[0], output_2)
-        #     acc3.append(acc_iou_3.numpy())
-        #     acc4.append(acc_iou_4.numpy())
-        #     # output_2 = np.argmax(output_2, axis=-1)
-        #
-        #     # Display the results
-        #     plt.figure(figsize=(12, 3))
-            acc_iou_1 = iou(mask[:, :, 1], pre_158[:, :, 1]).numpy()
-            acc_iou_2 = iou(mask, pre_158).numpy()
-            # print(acc_iou_1, acc_iou_2)
-            acc1.append(acc_iou_1)
-            acc2.append(acc_iou_2)
-        df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2})
-        print(df)
-        print(np.mean(acc1), np.mean(acc2))
-        with pd.ExcelWriter(r'../results/fine/no_freeze/no_freeze.xlsx', mode='a',
-                            engine='openpyxl', if_sheet_exists='replace') as writer:
-            df.to_excel(writer, sheet_name=f'fine_{i}')
-        del model
-        mean_t.append(np.mean(acc1))
-        mean_o.append(np.mean(acc2))
-    df_o = pd.DataFrame({'N': np.arange(2, 12, 2), 'mean_tree_iou1': mean_t, 'mean_o_iou1': mean_o})
-    with pd.ExcelWriter(r'../results/fine/no_freeze/no_freeze.xlsx', mode='a',
+    mean_t, mean_o, name = [], [], []
+    for i in range(2, 10, 2):
+        for j in range(3, 8, 1):
+            print(f'{i}_{j} start predicting....')
+            model = tf.keras.models.load_model(f'../results/mix/random/unet_mix_mask_{i}_{j}',
+                                               custom_objects={'dice_loss': dice_loss,
+                                                               'iou': iou,
+                                                               'tree_iou': tree_iou})
+            acc1, acc2 = [], []
+            for image_path, mask_path, image_id in zip(image_path_test, mask_path_test, image_id_test):
+                image = get_image(image_path)
+                mask = get_image(mask_path)
+                pre_158 = predict_on_array(model=model,
+                                           arr=image,
+                                           in_shape=(256, 256, 7),
+                                           out_bands=2,
+                                           stride=200,
+                                           batchsize=20,
+                                           augmentation=True,
+                                           verbose=False,
+                                           report_time=False)
+            # acc1, acc2, acc3, acc4 = [], [], [], []
+            # for (im, ms), i in zip(dataset, image_id_test):
+            #     # print(im.shape, ms.shape)
+            #     image_arr, mask_arr = im.numpy(), ms.numpy()
+            #     # print(image_arr.shape, mask_arr.shape)
+            #     # Prediction on large Image
+            #     outputs_1, outputs_2 = np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32), \
+            #                            np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32)
+            #     for inf in range(5):
+            #         output_1, _ = predict_on_array(model=model_1,
+            #                                        arr=image_arr[0],
+            #                                        in_shape=(256, 256, 7),
+            #                                        out_bands=2,
+            #                                        stride=200,
+            #                                        batchsize=20,
+            #                                        augmentation=True,
+            #                                        verbose=False,
+            #                                        report_time=True)
+            #
+            #         output_2, _ = predict_on_array(model=model_2,
+            #                                        arr=image_arr[0],
+            #                                        in_shape=(256, 256, 7),
+            #                                        out_bands=2,
+            #                                        stride=200,
+            #                                        batchsize=20,
+            #                                        augmentation=True,
+            #                                        verbose=False,
+            #                                        report_time=True)
+            #         outputs_1[inf] = output_1
+            #         outputs_2[inf] = output_2
+            #
+            #     # output_1 = (output_1 > 0.5) * 1
+            #     output_1 = np.mean(outputs_1, axis=0)
+            #     output_2 = np.mean(outputs_2, axis=0)
+            #
+            #     acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
+            #     acc_iou_2 = iou(mask_arr[0], output_1)
+            #     acc1.append(acc_iou_1.numpy())
+            #     acc2.append(acc_iou_2.numpy())
+            #
+            #     # output_1 = (output_1 > 0.5) * 1
+            #
+            #     # output_2 = (output_2 > 0.5) * 1
+            #     acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
+            #     acc_iou_4 = iou(mask_arr[0], output_2)
+            #     acc3.append(acc_iou_3.numpy())
+            #     acc4.append(acc_iou_4.numpy())
+            #     # output_2 = np.argmax(output_2, axis=-1)
+            #
+            #     # Display the results
+            #     plt.figure(figsize=(12, 3))
+                acc_iou_1 = iou(mask[:, :, 1], pre_158[:, :, 1]).numpy()
+                acc_iou_2 = iou(mask, pre_158).numpy()
+                # print(acc_iou_1, acc_iou_2)
+                acc1.append(acc_iou_1)
+                acc2.append(acc_iou_2)
+            df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2})
+            print(df)
+            print(np.mean(acc1), np.mean(acc2))
+            with pd.ExcelWriter(r'../results/mix/random/mix_random.xlsx', mode='a',
+                                engine='openpyxl', if_sheet_exists='replace') as writer:
+                df.to_excel(writer, sheet_name=f'mix_{i}_{j}')
+            del model
+            mean_t.append(np.mean(acc1))
+            mean_o.append(np.mean(acc2))
+            name.append((i, j))
+    df_o = pd.DataFrame({'N': name, 'mean_tree_iou1': mean_t, 'mean_o_iou1': mean_o})
+    with pd.ExcelWriter(r'../results/mix/random/mix_random.xlsx', mode='a',
                         engine='openpyxl', if_sheet_exists='replace') as writer:
-        df_o.to_excel(writer, sheet_name=f'fine_no_freeze')
+        df_o.to_excel(writer, sheet_name=f'mix_random_overall')
         # ax.imshow(rgb_mask(np.argmax(pre_158, axis=-1)))
         # ax.set_xticks([])
         # ax.set_yticks([])

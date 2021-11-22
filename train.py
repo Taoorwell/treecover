@@ -5,7 +5,7 @@ from dataloder import dataset, get_path
 
 if __name__ == '__main__':
     # some parameters
-    path = r'../quality/low/'
+    path = r'../quality/high/'
     seed = 2
     width = 256
     n_classes = 2
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     epochs = 300
     initial_learning_rate = 0.0001
     loss_fn = dice_loss
-    rate = 0.1
+    rate = 0.0
 
     # get path and image
     image_path_train, mask_path_train, image_i_train = get_path(path=path,
@@ -43,14 +43,14 @@ if __name__ == '__main__':
         model = U_Net(input_shape=(width, width, 7),
                       n_classes=n_classes,
                       rate=rate,
-                      mc=True,
+                      mc=False,
                       residual=True)
         model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
     model.summary()
 
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
-    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/unet_res_low_2_mc',
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/unet_res_high_2',
                                                            histogram_freq=1)
 
     model.fit(train_datasets,
@@ -59,5 +59,5 @@ if __name__ == '__main__':
               validation_data=valid_datasets,
               validation_steps=len(valid_datasets),
               callbacks=[learning_rate_scheduler, tensorboard_callbacks])
-    model.save('checkpoints/ckpt-unet_res_low_2_mc.h5')
+    model.save('checkpoints/unet_res_high_2')
     # model.save_weights('checkpoints/ckpt-unet_res_high_2')
