@@ -80,7 +80,7 @@ path = r'../results/'
 # # plt.show()
 #
 # # #########################group bar plot for mix datasets on test images (30) ###########
-# df = pd.read_excel(path + 'mix/random/mix_random.xlsx', sheet_name=f'mix')
+# df = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'mix')
 # plt.figure(figsize=(12, 6))
 # barWidth = 0.25
 # bar1 = df['mean_tree_iou1']
@@ -188,17 +188,17 @@ path = r'../results/'
 #     n_mean_o.append(mean_o_3)
 # print(e_mean_t, e_mean_o,
 #       d_mean_t, d_mean_o)
-df1 = pd.read_excel(path + 'fine/random/fine_random.xlsx', sheet_name=f'en_freeze')
-df2 = pd.read_excel(path + 'fine/random/fine_random.xlsx', sheet_name=f'de_freeze')
-df3 = pd.read_excel(path + 'fine/random/fine_random.xlsx', sheet_name=f'no_freeze')
+df1 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_en_freeze')
+df2 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_de_freeze')
+df3 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_no_freeze')
 
-plt.errorbar(np.arange(0, 6, 1), df1['o_iou1'], yerr=df1['std2'], capsize=3, marker='o',
+plt.errorbar(np.arange(0, 6, 1), df1['mean_o_iou1'], yerr=df1['std2'], capsize=3, marker='o',
              label=f'encoder freeze',
              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-plt.errorbar(np.arange(0, 6, 1), df2['o_iou1'], yerr=df2['std2'], capsize=3, marker='o',
+plt.errorbar(np.arange(0, 6, 1), df2['mean_o_iou1'], yerr=df2['std2'], capsize=3, marker='o',
              label=f'decoder freeze',
              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-plt.errorbar(np.arange(0, 6, 1), df3['o_iou1'], yerr=df3['std2'], capsize=3, marker='o',
+plt.errorbar(np.arange(0, 6, 1), df3['mean_o_iou1'], yerr=df3['std2'], capsize=3, marker='o',
              label=f'no freeze',
              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 
@@ -249,3 +249,35 @@ plt.xlabel('percentage of high quality datasets', fontweight='bold')
 plt.ylabel('Overall Iou', fontweight='bold')
 plt.legend()
 plt.show()
+# ######################## active learning + high and low quality ####################
+# df_high_active_initial = pd.read_excel(path + r'new_results.xlsx', sheet_name='high_active_initial')
+# df_high_active_decay = pd.read_excel(path + r'new_results.xlsx', sheet_name='high_active_decay_overall')
+# df_high_active_fixed_overall = pd.read_excel(path + r'new_results.xlsx', sheet_name='high_active_fixed_overall')
+
+# df_low_active_initial = pd.read_excel(path + r'new_results.xlsx', sheet_name='low_active_initial')
+# df_low_active_decay = pd.read_excel(path + r'new_results.xlsx', sheet_name='low_active_decay_overall')
+# df_low_active_fixed_overall = pd.read_excel(path + r'new_results.xlsx', sheet_name='low_active_fixed_overall')
+#
+# # print(df_high_active_initial)
+# # print(df_high_active_decay)
+# # print(df_high_active_fixed_overall)
+#
+# df_decay = df_low_active_initial.append(df_low_active_decay)
+# # print(df_decay)
+#
+# E = pd.unique(df_low_active_fixed_overall['E'])
+# plt.figure(figsize=(12, 6))
+# for e in [0.0, 0.03, 0.05, 0.1, 0.5]:
+#     df_fixed = df_low_active_initial.append(df_low_active_fixed_overall.loc[df_low_active_fixed_overall['E'] == e])
+#     # print(df_fixed)
+#     plt.plot(np.arange(0, 7, 1), df_fixed['mean_o_iou1'],
+#              marker='o', label=f'Entropy {e}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+#
+# plt.plot(np.arange(0, 7, 1), df_decay['mean_o_iou1'],
+#          marker='o', label=f'Entropy decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+#
+# plt.xlabel('Iterations', fontweight='bold')
+# plt.ylabel('Overall Iou', fontweight='bold')
+# plt.legend()
+# plt.show()
+

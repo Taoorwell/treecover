@@ -137,12 +137,22 @@ def model_pred(model, images, masks, images_ids, inf, delta):
                        'Tree_iou': t_c,
                        'O_iou': o_c})
     print(df)
-    image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
-    print(f'number of high: {len(image_id_selected)}, '
-          f'high confidence index:{image_id_selected}')
-    # replace mask from model prediction
-    masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
-    print(f'mask replacing finished!')
+    if delta >= 10:
+        print(f'first {0.1*delta:.2%} Percentage as model labelled masks')
+
+        image_id_selected = np.argsort(np.array(entropy1))[:int(len(entropy1)*delta)]
+        print(f'number of high: {len(image_id_selected)}, '
+              f'high confidence index:{np.array(images_ids)[image_id_selected]}')
+        # replace mask from model prediction
+        masks[image_id_selected] = np.array(prob)[image_id_selected]
+        print(f'mask replacing finished!')
+    else:
+        image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
+        print(f'number of high: {len(image_id_selected)}, '
+              f'high confidence index:{image_id_selected}')
+        # replace mask from model prediction
+        masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
+        print(f'mask replacing finished!')
 
     return images, masks, prob, df, image_id_selected
 
@@ -160,7 +170,7 @@ if __name__ == '__main__':
     epochs = 100
     n_classes = 2
     loss_fn = dice_loss
-    delta = 0.06
+    deltas = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01]
 
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
@@ -202,7 +212,7 @@ if __name__ == '__main__':
     tree_ious.append(i_tree_iou)
     o_ious.append(i_o_iou)
     model_labeled_r, human_labeled_r = [0], [40]
-    for i in np.arange(2, 8):
+    for i, de in zip(np.arange(2, 8), deltas):
         print(f'{i-1} Active learning starting! ')
         # Get active 2 path dataset
         active_image_path, active_mask_path, active_image_id = get_path(path=path,
@@ -223,7 +233,7 @@ if __name__ == '__main__':
                                                                 active_dataset_mask,
                                                                 active_image_id,
                                                                 inf=5,
-                                                                delta=delta)
+                                                                delta=de)
         with pd.ExcelWriter(r'checkpoints/active/high/decay/r.xlsx', engine='openpyxl', mode='a',
                             if_sheet_exists='replace') as writer:
             df.to_excel(writer, sheet_name=f'active_e_{i}')
@@ -286,17 +296,16 @@ if __name__ == '__main__':
         tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i)
         tree_ious.append(tree_iou_1)
         o_ious.append(o_iou_1)
-        delta = delta - 0.01
 
     data = pd.DataFrame({'active epoch': np.arange(1, 8),
                          'human label sample': human_labeled_r,
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
-                         'delta': [0., 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
+                         'delta': [0., 0.1, 0.08, 0.06, 0.04, 0.02, 0.01]})
     with pd.ExcelWriter(r'checkpoints/active/high/decay/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        data.to_excel(writer, sheet_name=f'active_data')
+        data.to_excel(writer, sheet_name=f'active_data_decay')
     print(data)
     # for im, ms, p, (index, rows), ids in zip(images, masks, prob, df.iterrows(), active2_path_dataset[2]):
     #     if rows['Entropy1'] < 0.21:

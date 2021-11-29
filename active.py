@@ -137,12 +137,22 @@ def model_pred(model, images, masks, images_ids, inf, delta):
                        'Tree_iou': t_c,
                        'O_iou': o_c})
     print(df)
-    image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
-    print(f'number of high: {len(image_id_selected)}, '
-          f'high confidence index:{image_id_selected}')
-    # replace mask from model prediction
-    masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
-    print(f'mask replacing finished!')
+    if delta >= 10:
+        print(f'first {0.1*delta:.2%} Percentage as model labelled masks')
+
+        image_id_selected = np.argsort(np.array(entropy1))[:int(len(entropy1)*delta)]
+        print(f'number of high: {len(image_id_selected)}, '
+              f'high confidence index:{np.array(images_ids)[image_id_selected]}')
+        # replace mask from model prediction
+        masks[image_id_selected] = np.array(prob)[image_id_selected]
+        print(f'mask replacing finished!')
+    else:
+        image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
+        print(f'number of high: {len(image_id_selected)}, '
+              f'high confidence index:{image_id_selected}')
+        # replace mask from model prediction
+        masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
+        print(f'mask replacing finished!')
 
     return images, masks, prob, df, image_id_selected
 
@@ -195,7 +205,7 @@ if __name__ == '__main__':
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     # for delta in [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]:
-    for delta in [0.5, 0.1, 0.00]:
+    for delta in [0.07, 0.08, 0.09]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
