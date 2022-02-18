@@ -64,7 +64,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/fixed/{int(delta)}/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/fixed/{int(delta*100)}/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
