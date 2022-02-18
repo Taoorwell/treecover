@@ -37,13 +37,10 @@ def initial_model_train(initial_dataset, validation_dataset):
             model = U_Net(input_shape=(256, 256, 7), n_classes=n_classes, rate=.1, mc=True, residual=True)
             model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
         # model.summary()
-
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-
         # tensorboard
         tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/active/high/unet_active_1',
                                                                histogram_freq=1)
-
         model.fit(initial_dataset,
                   steps_per_epoch=len(initial_dataset),
                   epochs=epochs,
@@ -52,6 +49,34 @@ def initial_model_train(initial_dataset, validation_dataset):
                   verbose=0,
                   callbacks=[learning_rate_scheduler, tensorboard_callbacks])
         model.save(f'checkpoints/active/high/unet_active_1')
+
+    return model
+
+
+def retrain_model(new_dataset, validation_dataset, delta, i):
+    optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+        # Monte Carlo Dropout
+        model = U_Net(input_shape=(256, 256, 7), n_classes=n_classes, rate=.1, mc=True, residual=True)
+        model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
+    model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+    # tensorboard
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+        log_dir=f'tb_callback_dir/active/high/fixed/{int(delta)}/unet_active_{i}',
+        histogram_freq=1)
+    model.fit(new_dataset,
+              steps_per_epoch=len(new_dataset),
+              epochs=epochs,
+              validation_data=validation_dataset,
+              validation_steps=len(validation_dataset),
+              verbose=0,
+              callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+              )
+    model.save(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}')
+    print(f'unet_active_{delta}_{i} saved!')
+
     return model
 
 
@@ -84,7 +109,7 @@ def model_test(model, images, masks, images_ids, inf, n, delta):
     print(df)
     mean_tree_iou, mean_o_iou = np.mean(acc1), np.mean(acc2)
     print(mean_tree_iou, mean_o_iou)
-    with pd.ExcelWriter(r'checkpoints/active/high/percent/r.xlsx',
+    with pd.ExcelWriter(r'checkpoints/active/high/fixed/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         df.to_excel(writer, sheet_name=f'active_{delta}_{n}')
     return mean_tree_iou, mean_o_iou
@@ -204,8 +229,8 @@ if __name__ == '__main__':
     test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_image_path, test_mask_path)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
-    # for delta in [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]:
-    for delta in [10, 20, 30, 40, 50]:
+    for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
+    # for delta in [10, 20, 30, 40, 50]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
@@ -240,7 +265,7 @@ if __name__ == '__main__':
                                                                     active_image_id,
                                                                     inf=5,
                                                                     delta=delta)
-            with pd.ExcelWriter(r'checkpoints/active/high/percent/r.xlsx', engine='openpyxl', mode='a',
+            with pd.ExcelWriter(r'checkpoints/active/high/fixed/r.xlsx', engine='openpyxl', mode='a',
                                 if_sheet_exists='replace') as writer:
                 df.to_excel(writer, sheet_name=f'active_e_{delta}_{i}')
 
@@ -256,44 +281,46 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/percent/{int(delta*100)}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
                                                    compile=True)
             else:
-                if i == 2:
-                    model = tf.keras.models.load_model(
-                        f'checkpoints/active/high/unet_active_{i-1}',
-                        custom_objects={'dice_loss': dice_loss,
-                                        'iou': iou,
-                                        'tree_iou': tree_iou},
-                        compile=True)
-                else:
-                    model = tf.keras.models.load_model(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i-1}',
-                                                       custom_objects={'dice_loss': dice_loss,
-                                                                       'iou': iou,
-                                                                       'tree_iou': tree_iou},
-                                                       compile=True)
-
-                model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-                learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-                # tensorboard
-                tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-                    log_dir=f'tb_callback_dir/active/high/percent/{int(delta)}/unet_active_{i}',
-                    histogram_freq=1)
-                model.fit(new_dataset,
-                          steps_per_epoch=len(new_dataset),
-                          epochs=epochs,
-                          validation_data=validation_dataset,
-                          validation_steps=len(validation_dataset),
-                          verbose=0,
-                          callbacks=[learning_rate_scheduler, tensorboard_callbacks]
-                          )
-
-                model.save(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i}')
-                print(f'unet_active_{delta}_{i} saved!')
+                model = retrain_model(new_dataset, validation_dataset, delta, i)
+                print(f'model {delta} {i} train from scratch finished')
+                # if i == 2:
+                #     model = tf.keras.models.load_model(
+                #         f'checkpoints/active/high/unet_active_{i-1}',
+                #         custom_objects={'dice_loss': dice_loss,
+                #                         'iou': iou,
+                #                         'tree_iou': tree_iou},
+                #         compile=True)
+                # else:
+                #     model = tf.keras.models.load_model(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i-1}',
+                #                                        custom_objects={'dice_loss': dice_loss,
+                #                                                        'iou': iou,
+                #                                                        'tree_iou': tree_iou},
+                #                                        compile=True)
+                #
+                # model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+                # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+                # # tensorboard
+                # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+                #     log_dir=f'tb_callback_dir/active/high/percent/{int(delta)}/unet_active_{i}',
+                #     histogram_freq=1)
+                # model.fit(new_dataset,
+                #           steps_per_epoch=len(new_dataset),
+                #           epochs=epochs,
+                #           validation_data=validation_dataset,
+                #           validation_steps=len(validation_dataset),
+                #           verbose=0,
+                #           callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+                #           )
+                #
+                # model.save(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i}')
+                # print(f'unet_active_{delta}_{i} saved!')
 
             initial_dataset_image_0 = new_images
             initial_dataset_mask_0 = new_masks
@@ -310,7 +337,7 @@ if __name__ == '__main__':
                              'tree iou': tree_ious,
                              'overall iou': o_ious,
                              })
-        with pd.ExcelWriter(r'checkpoints/active/high/percent/r.xlsx',
+        with pd.ExcelWriter(r'checkpoints/active/high/fixed/r.xlsx',
                             engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             data.to_excel(writer, sheet_name=f'active_data_{delta}')
         print(data)

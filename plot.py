@@ -1,8 +1,216 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+from utility import *
+# ##################### three masks plotting
+# path = r'../results/'
+image_path = r'../quality/'
+# i = 174
+# image_sample_high = get_image(image_path + f'high/mask_{i}.tif'
+# image_sample_low = get_image(image_path + f'low/mask_{i}.tif')
+# image_sample_image = get_image(image_path + f'images/tile_{i}.tif')
+#
+# plt.figure(figsize=(12, 4))
+# plt.subplot(131)
+# plt.imshow(image_sample_image[:, :, [4, 3, 2]])
+# plt.imshow(rgb_mask(image_sample_high[:, :, 1]), alpha=0.5)
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(r'High cost mask')
+#
+# plt.subplot(132)
+# plt.imshow(image_sample_image[:, :, [4, 3, 2]])
+# plt.imshow(rgb_mask(image_sample_low[:, :, 1]), alpha=0.5)
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(r'Low cost mask')
+#
+#
+# plt.subplot(133)
+# plt.imshow(image_sample_image[:, :, [4, 3, 2]])
+# active_201 = get_mat_info(image_path + f'active/active_{i}')
+# active_201 = active_201[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(active_201), alpha=0.5)
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(r'Model predicted mask')
 
-path = r'../results/'
+
+i = 259
+###############################################################################
+raw_image = get_image(image_path + f'images/tile_{i}.tif')
+ground_truth = get_image(image_path + f'high/mask_{i}.tif')
+plt.figure(figsize=(12, 6))
+plt.subplots_adjust(wspace=0.1, hspace=0.2)
+plt.subplot(241)
+plt.imshow(raw_image[:, :, [4, 3, 2]])
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'Image_{i}')
+#
+plt.subplot(242)
+plt.imshow(rgb_mask(ground_truth[:, :, 1]))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(r'Ground truth')
+
+plt.subplot(243)
+low_174 = get_mat_info(image_path + f'mix/{i}_l.mat')
+acc = iou(ground_truth, low_174)
+low_174 = low_174[:, :, 1] > 0.5
+plt.imshow(rgb_mask(low_174))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'100% Low acc:{acc:.2%}')
+
+plt.subplot(244)
+low_174_s = np.zeros((333, 333, 2))
+for p in range(3, 8, 1):
+    low_174 = get_mat_info(image_path + f'mix/{i}_mix_2_{p}.mat')
+    low_174_s = low_174_s + low_174
+low_174 = low_174_s / 5
+acc = iou(ground_truth, low_174)
+
+low_174 = low_174[:, :, 1] > 0.5
+plt.imshow(rgb_mask(low_174))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'20% High acc:{acc:.2%}')
+
+plt.subplot(245)
+low_174_s = np.zeros((333, 333, 2))
+for p in range(3, 8, 1):
+    low_174 = get_mat_info(image_path + f'mix/{i}_mix_4_{p}.mat')
+    low_174_s = low_174_s + low_174
+low_174 = low_174_s / 5
+acc = iou(ground_truth, low_174)
+
+low_174 = low_174[:, :, 1] > 0.5
+plt.imshow(rgb_mask(low_174))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'40% High acc:{acc:.2%}')
+
+plt.subplot(246)
+low_174_s = np.zeros((333, 333, 2))
+for p in range(3, 8, 1):
+    low_174 = get_mat_info(image_path + f'mix/{i}_mix_6_{p}.mat')
+    low_174_s = low_174_s + low_174
+low_174 = low_174_s / 5
+acc = iou(ground_truth, low_174)
+
+low_174 = low_174[:, :, 1] > 0.5
+plt.imshow(rgb_mask(low_174))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'60% High acc:{acc:.2%}')
+
+plt.subplot(247)
+low_174_s = np.zeros((333, 333, 2))
+for p in range(3, 8, 1):
+    low_174 = get_mat_info(image_path + f'mix/{i}_mix_8_{p}.mat')
+    low_174_s = low_174_s + low_174
+low_174 = low_174_s / 5
+acc = iou(ground_truth, low_174)
+
+low_174 = low_174[:, :, 1] > 0.5
+plt.imshow(rgb_mask(low_174))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'80% High acc:{acc:.2%}')
+
+plt.subplot(248)
+high_174 = get_mat_info(image_path + f'mix/{i}_h.mat')
+acc = iou(ground_truth, high_174)
+high_174 = high_174[:, :, 1] > 0.5
+plt.imshow(rgb_mask(high_174))
+plt.xticks([])
+plt.yticks([])
+plt.xlabel(f'100% High acc:{acc:.2%}')
+# plt.show()
+########################################################################################
+############################### active learning plot ###################
+# raw_image = get_image(image_path + f'images/tile_{i}.tif')
+# ground_truth = get_image(image_path + f'high/mask_{i}.tif')
+# plt.figure(figsize=(9, 9))
+# plt.subplots_adjust(wspace=0.1, hspace=0.2)
+# plt.subplot(331)
+# plt.imshow(raw_image[:, :, [4, 3, 2]])
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Image_{i}')
+# #
+# plt.subplot(332)
+# plt.imshow(rgb_mask(ground_truth[:, :, 1]))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(r'Ground truth')
+#
+# plt.subplot(333)
+# low_174 = get_mat_info(image_path + f'active/low/{i}_initial.mat')
+# acc = iou(ground_truth, low_174)
+# low_174 = low_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(low_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Initial model acc:{acc:.2%}')
+#
+# plt.subplot(334)
+# low_174 = get_mat_info(image_path + f'active/low/{i}_active_2.mat')
+# acc = iou(ground_truth, low_174)
+#
+# low_174 = low_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(low_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Step 1 acc:{acc:.2%}')
+#
+# plt.subplot(335)
+# low_174 = get_mat_info(image_path + f'active/low/{i}_active_3.mat')
+# acc = iou(ground_truth, low_174)
+# low_174 = low_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(low_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Step 2 acc:{acc:.2%}')
+#
+# plt.subplot(336)
+# low_174 = get_mat_info(image_path + f'active/low/{i}_active_4.mat')
+# acc = iou(ground_truth, low_174)
+# low_174 = low_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(low_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Step 3 acc:{acc:.2%}')
+#
+# plt.subplot(337)
+# low_174 = get_mat_info(image_path + f'active/low/{i}_active_5.mat')
+# acc = iou(ground_truth, low_174)
+# low_174 = low_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(low_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Step 4 acc:{acc:.2%}')
+#
+# plt.subplot(338)
+# high_174 = get_mat_info(image_path + f'active/low/{i}_active_6.mat')
+# acc = iou(ground_truth, high_174)
+# high_174 = high_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(high_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Step 5 acc:{acc:.2%}')
+#
+# plt.subplot(339)
+# high_174 = get_mat_info(image_path + f'active/low/{i}_active_7.mat')
+# acc = iou(ground_truth, high_174)
+# high_174 = high_174[:, :, 1] > 0.5
+# plt.imshow(rgb_mask(high_174))
+# plt.xticks([])
+# plt.yticks([])
+# plt.xlabel(f'Step 6 acc:{acc:.2%}')
+######################################### active learning plot ############################
+plt.show()
 
 # #################### high and low quality with residual Unet on test images (30) ############
 # df = pd.read_excel(path + r'high_low_2/r1.xlsx', sheet_name='low-high-nodropout')
@@ -79,9 +287,9 @@ path = r'../results/'
 # # plt.legend()
 # # plt.show()
 #
-# # #########################group bar plot for mix datasets on test images (30) ###########
+# # #########################group bar plot for mix datasets on test images (30) ########### graph 1
 # df = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'mix')
-# plt.figure(figsize=(12, 6))
+# plt.figure(figsize=(10, 6))
 # barWidth = 0.25
 # bar1 = df['mean_tree_iou1']
 # bar2 = df['mean_o_iou1']
@@ -105,22 +313,39 @@ path = r'../results/'
 
 # ########### model uncertainty analysis #############
 # fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
-# plt.subplots_adjust(wspace=0.3, hspace=0.5)
+# plt.subplots_adjust(wspace=0.5, hspace=0.5)
 # # deltas = np.arange(1, 7) * 0.01
 #
 # for i, ax in zip(range(2, 8), axis.flat):
 #     # print(i)
-#     df = pd.read_excel(path + 'active/high/r.xlsx', sheet_name=f'active_e_0.0_{i}')
+#     df = pd.read_excel(path + 'active/high/r_fixed.xlsx', sheet_name=f'active_e_0.05_{i}')
 #     df = df[:30]
 #     # print(df)
 #     ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=50)
-#     ax.axvspan(-0.001, 0., alpha=0.2, color='r')
-#     ax.set_title(f'active_{i-1}_iteration_{0.}')
+#     ax.axvspan(0, 0.05, alpha=0.2, color='r')
+#     ax.set_title(f'Step {i-1}')
 #     ax.set_xlabel(r'Entropy')
-#     ax.set_ylabel(r'overall Iou')
+#     ax.set_ylabel(r'Overall Iou')
 #
 # plt.show()
 
+# ########### model uncertainty analysis #############
+# fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
+# plt.subplots_adjust(wspace=0.5, hspace=0.5)
+# # deltas = np.arange(1, 7) * 0.01
+#
+# for i, ax in zip(range(2, 8), axis.flat):
+#     # print(i)
+#     df = pd.read_excel(path + 'active/high/r_decay.xlsx', sheet_name=f'active_e_{i}')
+#     df = df[:30]
+#     # print(df)
+#     ax.scatter(df['Entropy1'], df['O_iou'], marker='o', c='g', alpha=0.4, s=50)
+#     ax.axvspan(0, (8-i)*0.01, alpha=0.2, color='r')
+#     ax.set_title(f'Step {i-1}')
+#     ax.set_xlabel(r'Entropy')
+#     ax.set_ylabel(r'Overall Iou')
+
+# plt.show()
 # #################### entropy and variance dual plot, acc as marker size ###################
 # fig, axis = plt.subplots(ncols=3, nrows=2, figsize=(12, 6))
 # plt.subplots_adjust(wspace=0.3, hspace=0.5)
@@ -188,19 +413,19 @@ path = r'../results/'
 #     n_mean_o.append(mean_o_3)
 # print(e_mean_t, e_mean_o,
 #       d_mean_t, d_mean_o)
-df1 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_en_freeze')
-df2 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_de_freeze')
-df3 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_no_freeze')
-
-plt.errorbar(np.arange(0, 6, 1), df1['mean_o_iou1'], yerr=df1['std2'], capsize=3, marker='o',
-             label=f'encoder freeze',
-             linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-plt.errorbar(np.arange(0, 6, 1), df2['mean_o_iou1'], yerr=df2['std2'], capsize=3, marker='o',
-             label=f'decoder freeze',
-             linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
-plt.errorbar(np.arange(0, 6, 1), df3['mean_o_iou1'], yerr=df3['std2'], capsize=3, marker='o',
-             label=f'no freeze',
-             linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# df1 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_en_freeze')
+# df2 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_de_freeze')
+# df3 = pd.read_excel(path + 'new_results.xlsx', sheet_name=f'fine_no_freeze')
+#
+# plt.errorbar(np.arange(0, 6, 1), df1['mean_o_iou1'], yerr=df1['std2'], capsize=3, marker='o',
+#              label=f'encoder freeze',
+#              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.errorbar(np.arange(0, 6, 1), df2['mean_o_iou1'], yerr=df2['std2'], capsize=3, marker='o',
+#              label=f'decoder freeze',
+#              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+# plt.errorbar(np.arange(0, 6, 1), df3['mean_o_iou1'], yerr=df3['std2'], capsize=3, marker='o',
+#              label=f'no freeze',
+#              linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 
 #
 # plt.errorbar(np.arange(0, 6, 1), df1['tree_iou1'], yerr=df1['std1'], capsize=3, marker='o',
@@ -242,13 +467,13 @@ plt.errorbar(np.arange(0, 6, 1), df3['mean_o_iou1'], yerr=df3['std2'], capsize=3
 # # plt.bar(r2, bar2, color='c', width=barWidth, edgecolor='white', label='Overall_iou', alpha=0.4)
 # #
 # #
-plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], ['no fine tune',
-                                                  '10%', '20%', '30%', '40%', '50%'])
-# # # plt.ylim(0.5, 0.9)
-plt.xlabel('percentage of high quality datasets', fontweight='bold')
-plt.ylabel('Overall Iou', fontweight='bold')
-plt.legend()
-plt.show()
+# plt.xticks([r+0.15 for r in np.arange(0, 6, 1)], ['no fine tune',
+#                                                   '10%', '20%', '30%', '40%', '50%'])
+# # # # plt.ylim(0.5, 0.9)
+# plt.xlabel('percentage of high quality datasets', fontweight='bold')
+# plt.ylabel('Overall Iou', fontweight='bold')
+# plt.legend()
+# plt.show()
 # ######################## active learning + high and low quality ####################
 # df_high_active_initial = pd.read_excel(path + r'new_results.xlsx', sheet_name='high_active_initial')
 # df_high_active_decay = pd.read_excel(path + r'new_results.xlsx', sheet_name='high_active_decay_overall')
@@ -257,16 +482,17 @@ plt.show()
 # df_low_active_initial = pd.read_excel(path + r'new_results.xlsx', sheet_name='low_active_initial')
 # df_low_active_decay = pd.read_excel(path + r'new_results.xlsx', sheet_name='low_active_decay_overall')
 # df_low_active_fixed_overall = pd.read_excel(path + r'new_results.xlsx', sheet_name='low_active_fixed_overall')
-#
-# # print(df_high_active_initial)
-# # print(df_high_active_decay)
-# # print(df_high_active_fixed_overall)
-#
+# #
+# # # print(df_high_active_initial)
+# # # print(df_high_active_decay)
+# # # print(df_high_active_fixed_overall)
+# #
 # df_decay = df_low_active_initial.append(df_low_active_decay)
-# # print(df_decay)
-#
+# # # print(df_decay)
+# #
 # E = pd.unique(df_low_active_fixed_overall['E'])
-# plt.figure(figsize=(12, 6))
+# plt.figure(figsize=(10, 5))
+# plt.subplot(121)
 # for e in [0.0, 0.03, 0.05, 0.1, 0.5]:
 #     df_fixed = df_low_active_initial.append(df_low_active_fixed_overall.loc[df_low_active_fixed_overall['E'] == e])
 #     # print(df_fixed)
@@ -276,8 +502,24 @@ plt.show()
 # plt.plot(np.arange(0, 7, 1), df_decay['mean_o_iou1'],
 #          marker='o', label=f'Entropy decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
 #
-# plt.xlabel('Iterations', fontweight='bold')
+# plt.xlabel('Steps', fontweight='bold')
 # plt.ylabel('Overall Iou', fontweight='bold')
 # plt.legend()
-# plt.show()
+#
+# plt.subplot(122)
+# for e in [0.0, 0.03, 0.05, 0.1, 0.5]:
+#     df_fixed = df_low_active_initial.append(df_low_active_fixed_overall.loc[df_low_active_fixed_overall['E'] == e])
+#     # print(df_fixed)
+#     plt.plot(np.arange(0, 7, 1), df_fixed['mean_tree_iou1'],
+#              marker='o', label=f'Entropy {e}', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+#
+# plt.plot(np.arange(0, 7, 1), df_decay['mean_tree_iou1'],
+#          marker='o', label=f'Entropy decay', linestyle='dashed', linewidth=2, markersize=5, alpha=0.7)
+#
+# plt.xlabel('Steps', fontweight='bold')
+# plt.ylabel('Tree Iou', fontweight='bold')
+# plt.legend()
 
+# plt.show()
+# plt.show()
+# plt.savefig(r'../results/graph/fixed_entropy_05.png', dpi=300)

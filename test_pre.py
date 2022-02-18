@@ -1,7 +1,7 @@
 import tensorflow as tf
 from sys import stdout
 from dataloder import dataset, get_path
-from utility import rgb_mask, get_image
+from utility import rgb_mask, get_image, save_array_to_mat
 import time
 import numpy as np
 import pandas as pd
@@ -220,140 +220,229 @@ layers in the input array.
 
 if __name__ == '__main__':
     # Parameter define
-    path = r'../quality/high/'
-    width, height = 256, 256
-    seed = 2
+    ks = [259, 215, 210, 66, 150]
+    for k in ks:
 
-    # Trained Model loading
-    # model_1 = tf.keras.models.load_model(r'../results/active/high/decay/unet_active_2',
-    #                                      custom_objects={'dice_loss': dice_loss,
-    #                                                      'iou': iou,
-    #                                                      'tree_iou': tree_iou})
+    #########################################################################################################
+        image_201_path = f'../quality/images/tile_{k}.tif'
+        image_201 = get_image(image_201_path)
+        # model_high = tf.keras.models.load_model(f'../results/high_low_2/unet_res_high_2',
+        #                                         custom_objects={'dice_loss': dice_loss,
+        #                                                         'iou': iou,
+        #                                                         'tree_iou': tree_iou})
+        # pre_201 = predict_on_array(model=model_high,
+        #                            arr=image_201,
+        #                            in_shape=(256, 256, 7),
+        #                            out_bands=2,
+        #                            stride=200,
+        #                            batchsize=20,
+        #                            augmentation=True,
+        #                            verbose=False,
+        #                            report_time=False)
+        # # print(pre_201.shape)
+        # save_array_to_mat(pre_201, f'../quality/mix/{k}_h.mat')
+        #
+        # model_low = tf.keras.models.load_model(f'../results/high_low_2/unet_res_low_2.h5',
+        #                                        custom_objects={'dice_loss': dice_loss,
+        #                                                        'iou': iou,
+        #                                                        'tree_iou': tree_iou})
+        # pre_201 = predict_on_array(model=model_low,
+        #                            arr=image_201,
+        #                            in_shape=(256, 256, 7),
+        #                            out_bands=2,
+        #                            stride=200,
+        #                            batchsize=20,
+        #                            augmentation=True,
+        #                            verbose=False,
+        #                            report_time=False)
+        # # print(pre_201.shape)
+        # save_array_to_mat(pre_201, f'../quality/mix/{k}_l.mat')
 
-    # model_2 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_high_2.h5',
-    #                                      custom_objects={'dice_loss': dice_loss,
-    #                                                      'iou': iou,
-    #                                                      'tree_iou': tree_iou})
+        # print(image_201.shape)
+        for i in np.arange(2, 9, 2):
+            for j in np.arange(4, 8, 1):
+                model_1 = tf.keras.models.load_model(f'../results/mix/random/unet_mix_mask_{i}_{j}',
+                                                     custom_objects={'dice_loss': dice_loss,
+                                                                     'iou': iou,
+                                                                     'tree_iou': tree_iou})
 
-    # Image loading for further prediction
-
-    # image_158_path = r'../quality/images/tile_26.tif'
-    # mask_158_path = r'../quality/high/mask_26.tif'
+                pre_201 = predict_on_array(model=model_1,
+                                           arr=image_201,
+                                           in_shape=(256, 256, 7),
+                                           out_bands=2,
+                                           stride=200,
+                                           batchsize=20,
+                                           augmentation=True,
+                                           verbose=False,
+                                           report_time=False)
+                # print(pre_201.shape)
+                save_array_to_mat(pre_201, f'../quality/mix/{k}_mix_{i}_{j}.mat')
+                print(f'mix model {k} {i} {j}, prediction finish')
+    #################################################################################################################
+    ############################### active learning ############################
+    # image_201_path = f'../quality/images/tile_{k}.tif'
+    # image_201 = get_image(image_201_path)
+    # model_initial = tf.keras.models.load_model(f'../results/active/low/unet_active_1',
+    #                                            custom_objects={'dice_loss': dice_loss,
+    #                                                            'iou': iou,
+    #                                                            'tree_iou': tree_iou})
+    # pre_201 = predict_on_array(model=model_initial,
+    #                            arr=image_201,
+    #                            in_shape=(256, 256, 7),
+    #                            out_bands=2,
+    #                            stride=200,
+    #                            batchsize=20,
+    #                            augmentation=True,
+    #                            verbose=False,
+    #                            report_time=False)
+    # save_array_to_mat(pre_201, f'../quality/active/low/{k}_initial.mat')
     #
-    # image_158 = get_image(image_158_path)
-    # print(image_158.shape)
-    # mask_158 = get_image(mask_158_path)
-
-    image_path_test, mask_path_test, image_id_test = get_path(path=path,
-                                                              mode='test',
-                                                              seed=seed,
-                                                              active=0)
+    # for i in np.arange(2, 8, 1):
+    #     model_1 = tf.keras.models.load_model(f'../results/active/low/decay/old_decay/unet_active_{i}',
+    #                                          custom_objects={'dice_loss': dice_loss,
+    #                                                          'iou': iou,
+    #                                                          'tree_iou': tree_iou})
+    #     outputs_1 = np.zeros((5,) + pre_201.shape, dtype=np.float32)
+    #     for j in range(5):
+    #         pre_201 = predict_on_array(model=model_1,
+    #                                    arr=image_201,
+    #                                    in_shape=(256, 256, 7),
+    #                                    out_bands=2,
+    #                                    stride=200,
+    #                                    batchsize=20,
+    #                                    augmentation=True,
+    #                                    verbose=False,
+    #                                    report_time=False)
+    #         outputs_1[j] = pre_201
+    #     output_1 = np.mean(outputs_1, axis=0)
+    #     # print(pre_201.shape)
+    #     save_array_to_mat(output_1, f'../quality/active/low/{k}_active_{i}.mat')
+    #     print(f'active model {i}, prediction finish')
+    ####################################################################################################
+    # path = r'../quality/high/'
+    # width, height = 256, 256
+    # seed = 2
+    #
+    # # Trained Model loading
+    # # model_1 = tf.keras.models.load_model(r'../results/active/high/decay/unet_active_2',
+    # #                                      custom_objects={'dice_loss': dice_loss,
+    # #                                                      'iou': iou,
+    # #                                                      'tree_iou': tree_iou})
+    #
+    # # model_2 = tf.keras.models.load_model(r'../results/high_low_2/unet_res_high_2.h5',
+    # #                                      custom_objects={'dice_loss': dice_loss,
+    # #                                                      'iou': iou,
+    # #                                                      'tree_iou': tree_iou})
+    #
+    # # Image loading for further prediction
+    #
+    # # image_158_path = r'../quality/images/tile_26.tif'
+    # # mask_158_path = r'../quality/high/mask_26.tif'
+    # #
+    # # image_158 = get_image(image_158_path)
+    # # print(image_158.shape)
+    # # mask_158 = get_image(mask_158_path)
+    #
+    # image_path_test, mask_path_test, image_id_test = get_path(path=path,
+    #                                                           mode='test',
+    #                                                           seed=seed,
+    #                                                           active=0)
     # mean_t, mean_o, name = [], [], []
-    # for i in range(2, 10, 2):
-    #     for j in range(3, 8, 1):
+    # for i in range(0, 1, 1):
+    #     for j in range(2, 8, 1):
     #         print(f'{i}_{j} start predicting....')
-    model = tf.keras.models.load_model(f'../results/fine/random/de_freeze/unet_140_fine_10_3',
-                                       custom_objects={'dice_loss': dice_loss,
-                                                       'iou': iou,
-                                                       'tree_iou': tree_iou})
-
-    true_masks_cat, pre_masks_cat = [], []
-    for image_path, mask_path, image_id in zip(image_path_test, mask_path_test, image_id_test):
-        image = get_image(image_path)
-        mask = get_image(mask_path)
-        pre_158 = predict_on_array(model=model,
-                                   arr=image,
-                                   in_shape=(256, 256, 7),
-                                   out_bands=2,
-                                   stride=200,
-                                   batchsize=20,
-                                   augmentation=True,
-                                   verbose=False,
-                                   report_time=False)
-        true_masks_cat.append(mask)
-        pre_masks_cat.append(pre_158)
-    # #         # acc1, acc2, acc3, acc4 = [], [], [], []
-    # #         # for (im, ms), i in zip(dataset, image_id_test):
-    # #         #     # print(im.shape, ms.shape)
-    # #         #     image_arr, mask_arr = im.numpy(), ms.numpy()
-    # #         #     # print(image_arr.shape, mask_arr.shape)
-    # #         #     # Prediction on large Image
-    # #         #     outputs_1, outputs_2 = np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32), \
-    # #         #                            np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32)
-    # #         #     for inf in range(5):
-    # #         #         output_1, _ = predict_on_array(model=model_1,
-    # #         #                                        arr=image_arr[0],
-    # #         #                                        in_shape=(256, 256, 7),
-    # #         #                                        out_bands=2,
-    # #         #                                        stride=200,
-    # #         #                                        batchsize=20,
-    # #         #                                        augmentation=True,
-    # #         #                                        verbose=False,
-    # #         #                                        report_time=True)
-    # #         #
-    # #         #         output_2, _ = predict_on_array(model=model_2,
-    # #         #                                        arr=image_arr[0],
-    # #         #                                        in_shape=(256, 256, 7),
-    # #         #                                        out_bands=2,
-    # #         #                                        stride=200,
-    # #         #                                        batchsize=20,
-    # #         #                                        augmentation=True,
-    # #         #                                        verbose=False,
-    # #         #                                        report_time=True)
-    # #         #         outputs_1[inf] = output_1
-    # #         #         outputs_2[inf] = output_2
-    # #         #
-    # #         #     # output_1 = (output_1 > 0.5) * 1
-    # #         #     output_1 = np.mean(outputs_1, axis=0)
-    # #         #     output_2 = np.mean(outputs_2, axis=0)
-    # #         #
-    # #         #     acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
-    # #         #     acc_iou_2 = iou(mask_arr[0], output_1)
-    # #         #     acc1.append(acc_iou_1.numpy())
-    # #         #     acc2.append(acc_iou_2.numpy())
-    # #         #
-    # #         #     # output_1 = (output_1 > 0.5) * 1
-    # #         #
-    # #         #     # output_2 = (output_2 > 0.5) * 1
-    # #         #     acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
-    # #         #     acc_iou_4 = iou(mask_arr[0], output_2)
-    # #         #     acc3.append(acc_iou_3.numpy())
-    # #         #     acc4.append(acc_iou_4.numpy())
-    # #         #     # output_2 = np.argmax(output_2, axis=-1)
-    # #         #
-    # #         #     # Display the results
-    # #         #     plt.figure(figsize=(12, 3))
-    # #             acc_iou_1 = iou(mask[:, :, 1], pre_158[:, :, 1]).numpy()
-    # #             acc_iou_2 = iou(mask, pre_158).numpy()
-    # #             # print(acc_iou_1, acc_iou_2)
-    # #             acc1.append(acc_iou_1)
-    # #             acc2.append(acc_iou_2)
-    true_mask_cat = np.concatenate(true_masks_cat, axis=0)
-    pre_mask_cat = np.concatenate(pre_masks_cat, axis=0)
+    #         model = tf.keras.models.load_model(f'../results/active/low/percent/decay/unet_active_{j}',
+    #                                            custom_objects={'dice_loss': dice_loss,
+    #                                                            'iou': iou,
+    #                                                            'tree_iou': tree_iou})
     #
-    #         # print(f'true mask cat shape:{true_mask_cat.shape}')
-    #         # print(f'pre mask cat shape:{pre_mask_cat.shape}')
+    #         true_masks_cat, pre_masks_cat = [], []
+    #         for image_path, mask_path, image_id in zip(image_path_test, mask_path_test, image_id_test):
+    #             image = get_image(image_path)
+    #             mask = get_image(mask_path)
+    #             pre_158 = predict_on_array(model=model,
+    #                                        arr=image,
+    #                                        in_shape=(256, 256, 7),
+    #                                        out_bands=2,
+    #                                        stride=200,
+    #                                        batchsize=20,
+    #                                        augmentation=True,
+    #                                        verbose=False,
+    #                                        report_time=False)
+    #             true_masks_cat.append(mask)
+    #             pre_masks_cat.append(pre_158)
+    #         # #         # acc1, acc2, acc3, acc4 = [], [], [], []
+    #         # #         # for (im, ms), i in zip(dataset, image_id_test):
+    #         # #         #     # print(im.shape, ms.shape)
+    #         # #         #     image_arr, mask_arr = im.numpy(), ms.numpy()
+    #         # #         #     # print(image_arr.shape, mask_arr.shape)
+    #         # #         #     # Prediction on large Image
+    #         # #         #     outputs_1, outputs_2 = np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32), \
+    #         # #         #                            np.zeros((5, ) + mask_arr[0].shape, dtype=np.float32)
+    #         # #         #     for inf in range(5):
+    #         # #         #         output_1, _ = predict_on_array(model=model_1,
+    #         # #         #                                        arr=image_arr[0],
+    #         # #         #                                        in_shape=(256, 256, 7),
+    #         # #         #                                        out_bands=2,
+    #         # #         #                                        stride=200,
+    #         # #         #                                        batchsize=20,
+    #         # #         #                                        augmentation=True,
+    #         # #         #                                        verbose=False,
+    #         # #         #                                        report_time=True)
+    #         # #         #
+    #         # #         #         output_2, _ = predict_on_array(model=model_2,
+    #         # #         #                                        arr=image_arr[0],
+    #         # #         #                                        in_shape=(256, 256, 7),
+    #         # #         #                                        out_bands=2,
+    #         # #         #                                        stride=200,
+    #         # #         #                                        batchsize=20,
+    #         # #         #                                        augmentation=True,
+    #         # #         #                                        verbose=False,
+    #         # #         #                                        report_time=True)
+    #         # #         #         outputs_1[inf] = output_1
+    #         # #         #         outputs_2[inf] = output_2
+    #         # #         #
+    #         # #         #     # output_1 = (output_1 > 0.5) * 1
+    #         # #         #     output_1 = np.mean(outputs_1, axis=0)
+    #         # #         #     output_2 = np.mean(outputs_2, axis=0)
+    #         # #         #
+    #         # #         #     acc_iou_1 = iou(mask_arr[0][:, :, 1], output_1[:, :, 1])
+    #         # #         #     acc_iou_2 = iou(mask_arr[0], output_1)
+    #         # #         #     acc1.append(acc_iou_1.numpy())
+    #         # #         #     acc2.append(acc_iou_2.numpy())
+    #         # #         #
+    #         # #         #     # output_1 = (output_1 > 0.5) * 1
+    #         # #         #
+    #         # #         #     # output_2 = (output_2 > 0.5) * 1
+    #         # #         #     acc_iou_3 = iou(mask_arr[0][:, :, 1], output_2[:, :, 1])
+    #         # #         #     acc_iou_4 = iou(mask_arr[0], output_2)
+    #         # #         #     acc3.append(acc_iou_3.numpy())
+    #         # #         #     acc4.append(acc_iou_4.numpy())
+    #         # #         #     # output_2 = np.argmax(output_2, axis=-1)
+    #         # #         #
+    #         # #         #     # Display the results
+    #         # #         #     plt.figure(figsize=(12, 3))
+    #         # #             acc_iou_1 = iou(mask[:, :, 1], pre_158[:, :, 1]).numpy()
+    #         # #             acc_iou_2 = iou(mask, pre_158).numpy()
+    #         # #             # print(acc_iou_1, acc_iou_2)
+    #         # #             acc1.append(acc_iou_1)
+    #         # #             acc2.append(acc_iou_2)
+    #         true_mask_cat = np.concatenate(true_masks_cat, axis=0)
+    #         pre_mask_cat = np.concatenate(pre_masks_cat, axis=0)
     #
-    acc_iou_1 = iou(true_mask_cat[:, :, 1], pre_mask_cat[:, :, 1]).numpy()
-    acc_iou_2 = iou(true_mask_cat, pre_mask_cat).numpy()
-    print(f'tree iou for all 30 images:{acc_iou_1:.4f}')
-    print(f'Overall iou for all 30 images:{acc_iou_2:.4f}')
-    #
-    #         # df = pd.DataFrame({'N': image_id_test, 'tree_iou1': acc1, 'o_iou1': acc2})
-    #         # print(df)
-    #         # print(np.mean(acc1), np.mean(acc2))
-    #         # with pd.ExcelWriter(r'../results/fine/random/de_freeze/random/de_freeze_random.xlsx', mode='a',
-    #         #                     engine='openpyxl', if_sheet_exists='replace') as writer:
-    #         #     df.to_excel(writer, sheet_name=f'fine_{i}_{j}')
+    #         acc_iou_1 = iou(true_mask_cat[:, :, 1], pre_mask_cat[:, :, 1]).numpy()
+    #         acc_iou_2 = iou(true_mask_cat, pre_mask_cat).numpy()
+    #         print(f'tree iou for all 30 images:{acc_iou_1:.4f}')
+    #         print(f'Overall iou for all 30 images:{acc_iou_2:.4f}')
     #         del model
     #         mean_t.append(acc_iou_1)
     #         mean_o.append(acc_iou_2)
     #         name.append((i, j))
-    #         # break
+    # #         # break
     # df_o = pd.DataFrame({'N': name, 'mean_tree_iou1': mean_t, 'mean_o_iou1': mean_o})
     # with pd.ExcelWriter(r'../results/new_results.xlsx', mode='a',
     #                     engine='openpyxl', if_sheet_exists='replace') as writer:
-    #     df_o.to_excel(writer, sheet_name=f'mix_overall')
+    #     df_o.to_excel(writer, sheet_name=f'low_active_percent_decay')
     # t_iou, o_iou, name = [], [], []
     # entropy = [0, 1, 2, 3, 4, 5, 6, 10, 50]
     # for i in entropy:

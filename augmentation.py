@@ -1,10 +1,12 @@
 import tensorflow as tf
+from matplotlib import pyplot as plt
+from utility import *
 import os
 from glob import glob
 
 
 def image_dataset(path, mode, width, batch_size):
-    images_path, masks_path = load_data(path, mode)
+    images_path, masks_path = get_path(path, mode)
     datasets = tf.data.Dataset.from_tensor_slices((images_path, masks_path))
 
     # parse path into full image and then into patches
@@ -16,8 +18,8 @@ def image_dataset(path, mode, width, batch_size):
             x1 = x.decode()
             y1 = y.decode()
 
-            x2 = get_raster(x1)
-            y2 = get_raster(y1)
+            x2 = get_image(x1)
+            y2 = get_image(y1)
             return x2, y2
 
         image, mask = tf.numpy_function(f, [x, y], [tf.float32, tf.float32])

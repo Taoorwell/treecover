@@ -111,7 +111,14 @@ palette = {0: (255, 255, 255),  # White
            15: (165, 42, 42),
            16: (175, 238, 238)}
 
-# if __name__ == '__main__':
+
+def iou(y_true, y_pred):
+    numerator = np.sum(y_true[:, :, 1] * y_pred[:, :, 1])
+    denominator = np.sum(y_true[:, :, 1] + y_pred[:, :, 1])
+    return numerator / (denominator - numerator)
+
+
+if __name__ == '__main__':
     # path = r'../quality/high/'
     # images_path, masks_path, images_id = get_path(path, mode='train', seed=2, active=0)
     # print(len(images_path))
@@ -131,14 +138,20 @@ palette = {0: (255, 255, 255),  # White
     #     plt.yticks([])
     #
     #     plt.show()
-        # break
-    # image_201 = r'../quality/images/tile_201.tif'
+    #     break
+    image_201 = r'../quality/images/tile_201.tif'
+    ds = gdal.Open(image_201)
+    geo = ds.GetGeoTransform()
+    proj = ds.GetProjectionRef()
+    print(geo)
+    print(proj)
+
     # high_201 = r'../quality/high/mask_201.tif'
     # low_201 = r'../quality/low/mask_201.tif'
     # image_201, high_201, low_201 = get_image(image_201), get_image(high_201), get_image(low_201)
     #
     # plt.imshow(image_201[:, :, [4, 3, 2]])
-    # plt.imshow(rgb_mask(high_201[:, :, 1]), alpha=0.5)
+    # # plt.imshow(rgb_mask(high_201[:, :, 1]), alpha=1)
     # plt.xticks([])
     # plt.yticks([])
     # plt.show()
