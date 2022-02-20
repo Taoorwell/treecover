@@ -41,15 +41,17 @@ def conv_block(x, n_filters, rate, mc=False, recurrent=False, residual=False):
 
     conv = conv_b_a(conv, recurrent)
 
-    if rate > 0:
+    # if rate > 0:
         # conv = Dropout(dropout)(conv)
-        conv = mc_dropout(rate, conv, mc=mc)
+    #    conv = mc_dropout(rate, conv, mc=mc)
 
     if residual is True:
         shortcut = Conv2D(n_filters, (1, 1), padding='same')(x)
         shortcut = BatchNormalization()(shortcut)
         conv = add([shortcut, conv])
-        # conv = Activation('relu')(conv)
+    if rate > 0:
+        conv = mc_dropout(rate, conv, mc=mc)
+    # conv = Activation('relu')(conv)
     return conv
 
 
@@ -164,7 +166,7 @@ def U_Net(input_shape, n_classes, rate=0., mc=False, recurrent=False, residual=F
 
 
 if __name__ == '__main__':
-    unet = U_Net(input_shape=(256, 256, 7), n_classes=2, rate=0.0, mc=False, residual=True)
+    unet = U_Net(input_shape=(256, 256, 7), n_classes=2, rate=0.1, mc=True, residual=True)
     unet.summary()
     # for i, layer in enumerate(unet.layers[:48]):
     #     print(f'{i}th layer:')
