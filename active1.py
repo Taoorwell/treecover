@@ -55,6 +55,33 @@ def initial_model_train(initial_dataset, validation_dataset):
     return model
 
 
+def retrain_model(new_dataset, validation_dataset, i):
+    optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+        # Monte Carlo Dropout
+        model = U_Net(input_shape=(256, 256, 7), n_classes=n_classes, rate=.1, mc=True, residual=True)
+        model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
+    model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+    # tensorboard
+    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+        log_dir=f'tb_callback_dir/active/high/decay/unet_active_{i}',
+        histogram_freq=1)
+    model.fit(new_dataset,
+              steps_per_epoch=len(new_dataset),
+              epochs=epochs,
+              validation_data=validation_dataset,
+              validation_steps=len(validation_dataset),
+              verbose=0,
+              callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+              )
+    model.save(f'checkpoints/active/high/decay/unet_active_{i}')
+    print(f'unet_active_{i} saved!')
+
+    return model
+
+
 def model_test(model, images, masks, images_ids, inf, n):
     acc1, acc2 = [], []
     for im, ms in zip(images, masks):
@@ -170,7 +197,8 @@ if __name__ == '__main__':
     epochs = 100
     n_classes = 2
     loss_fn = dice_loss
-    deltas = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01]
+    # deltas = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01]
+    deltas = [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
 
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
@@ -257,37 +285,39 @@ if __name__ == '__main__':
                                                                'tree_iou': tree_iou},
                                                compile=True)
         else:
-            if i == 2:
-                model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_{i-1}',
-                                                   custom_objects={'dice_loss': dice_loss,
-                                                                   'iou': iou,
-                                                                   'tree_iou': tree_iou},
-                                                   compile=True)
-            else:
-                model = tf.keras.models.load_model(f'checkpoints/active/high/decay/unet_active_{i-1}',
-                                                   custom_objects={'dice_loss': dice_loss,
-                                                                   'iou': iou,
-                                                                   'tree_iou': tree_iou},
-                                                   compile=True)
-
-            model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-            learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-            # tensorboard
-            tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=
-                                                                   f'tb_callback_dir/active/high/decay/unet_active_{i}',
-                                                                   histogram_freq=1)
-
-            model.fit(new_dataset,
-                      steps_per_epoch=len(new_dataset),
-                      epochs=epochs,
-                      validation_data=validation_dataset,
-                      validation_steps=len(validation_dataset),
-                      verbose=0,
-                      callbacks=[learning_rate_scheduler, tensorboard_callbacks]
-                      )
-
-            model.save(f'checkpoints/active/high/decay/unet_active_{i}')
-            print(f'unet_active_{i} saved!')
+            model = retrain_model(new_dataset, validation_dataset, i)
+            # pass
+            # if i == 2:
+            #     model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_{i-1}',
+            #                                        custom_objects={'dice_loss': dice_loss,
+            #                                                        'iou': iou,
+            #                                                        'tree_iou': tree_iou},
+            #                                        compile=True)
+            # else:
+            #     model = tf.keras.models.load_model(f'checkpoints/active/high/decay/unet_active_{i-1}',
+            #                                        custom_objects={'dice_loss': dice_loss,
+            #                                                        'iou': iou,
+            #                                                        'tree_iou': tree_iou},
+            #                                        compile=True)
+            #
+            # model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+            # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+            # # tensorboard
+            # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=
+            #                                                        f'tb_callback_dir/active/high/decay/unet_active_{i}',
+            #                                                        histogram_freq=1)
+            #
+            # model.fit(new_dataset,
+            #           steps_per_epoch=len(new_dataset),
+            #           epochs=epochs,
+            #           validation_data=validation_dataset,
+            #           validation_steps=len(validation_dataset),
+            #           verbose=0,
+            #           callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+            #           )
+            #
+            # model.save(f'checkpoints/active/high/decay/unet_active_{i}')
+            # print(f'unet_active_{i} saved!')
 
         initial_dataset_image = new_images
         initial_dataset_mask = new_masks
@@ -302,23 +332,9 @@ if __name__ == '__main__':
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
-                         'delta': [0., 0.1, 0.08, 0.06, 0.04, 0.02, 0.01]})
+                         'delta': [0., 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
     with pd.ExcelWriter(r'checkpoints/active/high/decay/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data_decay')
     print(data)
-    # for im, ms, p, (index, rows), ids in zip(images, masks, prob, df.iterrows(), active2_path_dataset[2]):
-    #     if rows['Entropy1'] < 0.21:
-    #         fig, axs = plt.subplots(1, 3, figsize=(10, 5))
-    #         axs[0].imshow(im[:, :, :3])
-    #         axs[0].set_xlabel(f'image_{ids}')
-    #
-    #         axs[1].imshow(rgb_mask(np.argmax(ms, axis=-1)))
-    #         axs[1].set_xlabel(f'mask_{ids}')
-    #
-    #         axs[2].imshow(rgb_mask(np.argmax(p, axis=-1)))
-    #         axs[2].set_xlabel(f'prob_{ids} \n model labeled' if ids in image_id_selected else f'drop')
-    #         axs[2].set_title(f"E1:{rows['Entropy1']:.4f} \n Var:{rows['Variance']:.4f}")
-    #         plt.show()
-        # bre
 
