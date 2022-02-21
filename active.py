@@ -306,7 +306,7 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/percent/{int(delta*100)}/unet_active_{i}'):
+            if os.path.exists(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}'):
                 model = tf.keras.models.load_model(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
