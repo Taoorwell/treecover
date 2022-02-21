@@ -64,7 +64,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/fixed/{int(delta*100)}/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/percent/{delta}/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
@@ -74,7 +74,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
               verbose=0,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
-    model.save(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}')
+    model.save(f'checkpoints/active/high/percent/{delta}/unet_active_{i}')
     print(f'unet_active_{delta}_{i} saved!')
 
     return model
@@ -254,8 +254,8 @@ if __name__ == '__main__':
     test_dataset_image, test_dataset_mask = get_active_image_mask_array_list(test_image_path, test_mask_path)
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
-    for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
-    # for delta in [10, 20, 30, 40, 50]:
+    # for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
+    for delta in [0, 20, 40, 60, 80, 100]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
@@ -290,7 +290,7 @@ if __name__ == '__main__':
                                                                     active_image_id,
                                                                     inf=5,
                                                                     delta=delta)
-            with pd.ExcelWriter(r'checkpoints/active/high/fixed/r.xlsx', engine='openpyxl', mode='a',
+            with pd.ExcelWriter(r'checkpoints/active/high/percent/r.xlsx', engine='openpyxl', mode='a',
                                 if_sheet_exists='replace') as writer:
                 df.to_excel(writer, sheet_name=f'active_e_{delta}_{i}')
 
@@ -306,8 +306,8 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/fixed/{int(delta*100)}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/percent/{delta}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/percent/{delta}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
@@ -363,7 +363,7 @@ if __name__ == '__main__':
                              'tree iou': tree_ious,
                              'overall iou': o_ious,
                              })
-        with pd.ExcelWriter(r'checkpoints/active/high/fixed/r.xlsx',
+        with pd.ExcelWriter(r'checkpoints/active/high/percent/r.xlsx',
                             engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             data.to_excel(writer, sheet_name=f'active_data_{delta}')
         print(data)

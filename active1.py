@@ -66,7 +66,7 @@ def retrain_model(new_dataset, validation_dataset, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/decay/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/percent/decay/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
@@ -76,7 +76,7 @@ def retrain_model(new_dataset, validation_dataset, i):
               verbose=0,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
-    model.save(f'checkpoints/active/high/decay/unet_active_{i}')
+    model.save(f'checkpoints/active/high/percent/decay/unet_active_{i}')
     print(f'unet_active_{i} saved!')
 
     return model
@@ -287,7 +287,7 @@ if __name__ == '__main__':
                                                                 active_image_id,
                                                                 inf=5,
                                                                 delta=de)
-        with pd.ExcelWriter(r'checkpoints/active/high/decay/r.xlsx', engine='openpyxl', mode='a',
+        with pd.ExcelWriter(r'checkpoints/active/high/percent/decay/r.xlsx', engine='openpyxl', mode='a',
                             if_sheet_exists='replace') as writer:
             df.to_excel(writer, sheet_name=f'active_e_{i}')
 
@@ -303,8 +303,8 @@ if __name__ == '__main__':
         print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
         print(f'Re-train model...')
-        if os.path.exists(f'checkpoints/active/high/decay/unet_active_{i}'):
-            model = tf.keras.models.load_model(f'checkpoints/active/high/decay/unet_active_{i}',
+        if os.path.exists(f'checkpoints/active/high/percent/decay/unet_active_{i}'):
+            model = tf.keras.models.load_model(f'checkpoints/active/high/percent/decay/unet_active_{i}',
                                                custom_objects={'dice_loss': dice_loss,
                                                                'iou': iou,
                                                                'tree_iou': tree_iou},
@@ -358,7 +358,7 @@ if __name__ == '__main__':
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
                          'delta': [0., 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]})
-    with pd.ExcelWriter(r'checkpoints/active/high/decay/r.xlsx',
+    with pd.ExcelWriter(r'checkpoints/active/high/percent/decay/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data_decay')
     print(data)
