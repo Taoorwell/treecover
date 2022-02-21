@@ -117,6 +117,31 @@ def model_test(model, images, masks, images_ids, inf, n):
     return mean_tree_iou, mean_o_iou
 
 
+def model_test_1(model, images, masks, inf):
+    true_masks_cat, pre_masks_cat = [], []
+    for im, ms in zip(images, masks):
+        image_arr, mask_arr = im, ms
+        outputs = np.zeros((inf, ) + mask_arr.shape, dtype=np.float32)
+        for f in range(inf):
+            output_1 = predict_on_array(model=model,
+                                        arr=image_arr,
+                                        in_shape=(256, 256, 7),
+                                        out_bands=2,
+                                        stride=200,
+                                        batchsize=20,
+                                        augmentation=True)
+            outputs[f] = output_1
+        outputs = np.mean(outputs, axis=0)
+        true_masks_cat.append(mask_arr)
+        pre_masks_cat.append(outputs)
+    true_mask = np.concatenate(true_masks_cat, axis=0)
+    pre_mask = np.concatenate(pre_masks_cat, axis=0)
+    mean_tree_iou = iou(true_mask[:, :, 1], pre_mask[:, :, 1]).numpy()
+    mean_o_iou = iou(true_mask, pre_mask).numpy()
+
+    return mean_tree_iou, mean_o_iou
+
+
 def model_pred(model, images, masks, images_ids, inf, delta):
     def uncertainty(outputs):
         eps = 1e-15
@@ -323,7 +348,7 @@ if __name__ == '__main__':
         initial_dataset_mask = new_masks
         # new model for prediction
         print(f'Active {i} prediction on test datasets')
-        tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i)
+        tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=5)
         tree_ious.append(tree_iou_1)
         o_ious.append(o_iou_1)
 
