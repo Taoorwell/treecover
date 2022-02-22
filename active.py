@@ -194,13 +194,13 @@ def model_pred(model, images, masks, images_ids, inf, delta):
           f'high confidence index:{np.array(images_ids)[image_id_selected_h]}')
 
     image_id_selected_l = np.argsort(np.array(entropy1))[-int(40*(1-delta)):]
-    rest_image_ids = np.array(images_ids)[image_id_selected_l]
     print(f'number of low: {len(image_id_selected_l)}, '
-          f'low confidence index:{rest_image_ids}')
+          f'low confidence index:{np.array(images_ids)[image_id_selected_l]}')
 
     image_id_rest = np.argsort(np.array(entropy1))[int(40*delta): -int(40*(1-delta))]
+    rest_image_ids = np.array(images_ids)[image_id_rest]
     print(f'number of rest: {len(image_id_rest)}, '
-          f'low confidence index:{np.array(images_ids)[image_id_rest]}')
+          f'low confidence index:{rest_image_ids}')
 
     new_images, new_masks = np.zeros_like(images[:40]), np.zeros_like(masks[:40])
 
@@ -306,8 +306,8 @@ if __name__ == '__main__':
             #                                                                 seed=seed,
             #                                                                 active=i)
             print(f'{i} new batch active datasets loading successfully')
-            print(f'new batch active datasets length: {len(active_image_id)}')
-            print(f'new batch active datasets id:{active_image_id}')
+            print(f'new batch active datasets length: {len(active_image_ids)}')
+            print(f'new batch active datasets id:{active_image_ids}')
 
             # model_test(initial_model, test_dataset, inf=5)
             print(f'model prediction on new batch active datasets')
