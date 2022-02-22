@@ -333,8 +333,8 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/percent/{delta}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/percent/{delta}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/new_percent/{delta}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{delta}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
