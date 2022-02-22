@@ -224,7 +224,7 @@ if __name__ == '__main__':
     loss_fn = dice_loss
     # deltas = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01]
     # deltas = [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
-    deltas = [20, 30, 40, 50, 60, 70, 80]
+    deltas = [20, 30, 40, 50, 60, 70]
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
                                                                        mode='train',
@@ -348,7 +348,7 @@ if __name__ == '__main__':
         initial_dataset_mask = new_masks
         # new model for prediction
         print(f'Active {i} prediction on test datasets')
-        tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=5)
+        tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=10)
         tree_ious.append(tree_iou_1)
         o_ious.append(o_iou_1)
 
@@ -357,7 +357,7 @@ if __name__ == '__main__':
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
-                         'delta': [20, 30, 40, 50, 60, 70, 80]})
+                         'delta': [0, 20, 30, 40, 50, 60, 70]})
     with pd.ExcelWriter(r'checkpoints/active/high/percent/decay/r.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data_decay')
