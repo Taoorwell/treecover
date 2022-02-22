@@ -194,8 +194,9 @@ def model_pred(model, images, masks, images_ids, inf, delta):
           f'high confidence index:{np.array(images_ids)[image_id_selected_h]}')
 
     image_id_selected_l = np.argsort(np.array(entropy1))[-int(40*(1-delta)):]
+    rest_image_ids = np.array(images_ids)[image_id_selected_l]
     print(f'number of low: {len(image_id_selected_l)}, '
-          f'low confidence index:{np.array(images_ids)[image_id_selected_l]}')
+          f'low confidence index:{rest_image_ids}')
 
     image_id_rest = np.argsort(np.array(entropy1))[int(40*delta): -int(40*(1-delta))]
     print(f'number of rest: {len(image_id_rest)}, '
@@ -229,7 +230,7 @@ def model_pred(model, images, masks, images_ids, inf, delta):
     #     masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
     #     print(f'mask replacing finished!')
 
-    return new_images, new_masks, df, rest_images, rest_masks
+    return new_images, new_masks, df, rest_images, rest_masks, rest_image_ids
 
 # put new images and masks with previous datasets together.
 
@@ -295,6 +296,8 @@ if __name__ == '__main__':
         initial_dataset_mask_0 = initial_dataset_mask
         active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_image_path,
                                                                                      active_mask_path)
+        active_image_ids = active_image_id
+
         for i in np.arange(2, 8):
             print(f'{delta}_{i-1} Active learning starting! ')
             # Get active 2 path dataset
@@ -308,12 +311,12 @@ if __name__ == '__main__':
 
             # model_test(initial_model, test_dataset, inf=5)
             print(f'model prediction on new batch active datasets')
-            images, masks, df, rest_images, rest_masks = model_pred(model,
-                                                                    active_dataset_image,
-                                                                    active_dataset_mask,
-                                                                    active_image_id,
-                                                                    inf=5,
-                                                                    delta=delta)
+            images, masks, df, rest_images, rest_masks, rest_image_ids = model_pred(model,
+                                                                                    active_dataset_image,
+                                                                                    active_dataset_mask,
+                                                                                    active_image_ids,
+                                                                                    inf=5,
+                                                                                    delta=delta)
             with pd.ExcelWriter(r'checkpoints/active/high/new_percent/r.xlsx', engine='openpyxl', mode='a',
                                 if_sheet_exists='replace') as writer:
                 df.to_excel(writer, sheet_name=f'active_e_{delta}_{i}')
@@ -375,6 +378,7 @@ if __name__ == '__main__':
             initial_dataset_mask_0 = new_masks
             active_dataset_image = rest_images
             active_dataset_mask = rest_masks
+            active_image_ids = rest_image_ids
 
             # new model for prediction
             print(f'Active {i} prediction on test datasets')
