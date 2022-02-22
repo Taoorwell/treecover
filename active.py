@@ -204,10 +204,10 @@ def model_pred(model, images, masks, images_ids, inf, delta):
     new_images, new_masks = np.zeros_like(images[:40]), np.zeros_like(masks[:40])
 
     new_images[:len(image_id_selected_h)] = images[image_id_selected_h]
-    new_images[len(image_id_selected_l):] = images[image_id_selected_l]
+    new_images[-len(image_id_selected_l):] = images[image_id_selected_l]
 
     new_masks[:len(image_id_selected_h)] = np.array(prob)[image_id_selected_h]
-    new_masks[len(image_id_selected_l):] = masks[image_id_selected_l]
+    new_masks[-len(image_id_selected_l):] = masks[image_id_selected_l]
 
     rest_images = images[image_id_rest]
     rest_masks = masks[image_id_rest]
