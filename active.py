@@ -64,7 +64,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/new_percent/{delta}/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/new_percent/{delta*100}/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
@@ -74,7 +74,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
               verbose=0,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
-    model.save(f'checkpoints/active/high/new_percent/{delta}/unet_active_{i}')
+    model.save(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}')
     print(f'unet_active_{delta}_{i} saved!')
 
     return model
@@ -333,8 +333,8 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/new_percent/{delta}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{delta}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
