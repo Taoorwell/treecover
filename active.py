@@ -190,7 +190,7 @@ def model_pred(model, images, masks, images_ids, inf, delta):
     if delta >= 10:
         print(f'first {0.1*delta:.2%} Percentage as model labelled masks')
 
-        image_id_selected = np.argsort(np.array(entropy1))[:int(len(entropy1)*delta)]
+        image_id_selected = np.argsort(np.array(entropy1))[:int(len(entropy1)*delta*0.01)]
         print(f'number of high: {len(image_id_selected)}, '
               f'high confidence index:{np.array(images_ids)[image_id_selected]}')
         # replace mask from model prediction
