@@ -261,7 +261,7 @@ if __name__ == '__main__':
         model = initial_model_train(initial_dataset, validation_dataset)
         print('initial model loaded successfully')
         print('initial model prediction on test datasets')
-        i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1,
+        i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=10, n=1,
                                          delta=delta)
         tree_ious.append(i_tree_iou)
         o_ious.append(i_o_iou)
@@ -353,7 +353,7 @@ if __name__ == '__main__':
             print(f'Active {i} prediction on test datasets')
             # tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i,
             #                                  delta=delta)
-            tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=5)
+            tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=10)
             tree_ious.append(tree_iou_1)
             o_ious.append(o_iou_1)
 
