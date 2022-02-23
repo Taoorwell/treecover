@@ -289,8 +289,9 @@ if __name__ == '__main__':
         model = initial_model_train(initial_dataset, validation_dataset)
         print('initial model loaded successfully')
         print('initial model prediction on test datasets')
-        i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1,
-                                         delta=delta)
+        # i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1,
+        #                                  delta=delta)
+        i_tree_iou, i_o_iou = model_test_1(model, test_dataset_image, test_dataset_mask, inf=5)
         tree_ious.append(i_tree_iou)
         o_ious.append(i_o_iou)
         model_labeled_r, human_labeled_r = [0], [40]
