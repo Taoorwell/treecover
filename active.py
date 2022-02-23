@@ -192,12 +192,12 @@ def model_pred(model, images, masks, images_ids, inf, delta):
     image_id_selected_h = np.argsort(np.array(entropy1))[:int(40*delta)]
     print(f'number of high: {len(image_id_selected_h)}, '
           f'high confidence index:{np.array(images_ids)[image_id_selected_h]}')
-
-    image_id_selected_l = np.argsort(np.array(entropy1))[-int(40*(1-delta)):]
+ 
+    image_id_selected_l = np.array([], dtype=np.int64) if (1-delta) == 0 else np.argsort(np.array(entropy1))[-int(40*(1-delta)):]
     print(f'number of low: {len(image_id_selected_l)}, '
           f'low confidence index:{np.array(images_ids)[image_id_selected_l]}')
 
-    image_id_rest = np.argsort(np.array(entropy1))[int(40*delta): -int(40*(1-delta))]
+    image_id_rest = np.argsort(np.array(entropy1))[int(40*delta):] if (1-delta) == 0 else np.argsort(np.array(entropy1))[int(40*delta): -int(40*(1-delta))]
     rest_image_ids = np.array(images_ids)[image_id_rest]
     print(f'number of rest: {len(image_id_rest)}, '
           f'low confidence index:{rest_image_ids}')
@@ -205,10 +205,12 @@ def model_pred(model, images, masks, images_ids, inf, delta):
     new_images, new_masks = np.zeros_like(images[:40]), np.zeros_like(masks[:40])
 
     new_images[:len(image_id_selected_h)] = images[image_id_selected_h]
-    new_images[-len(image_id_selected_l):] = images[image_id_selected_l]
+    if delta != 1:
+        new_images[-len(image_id_selected_l):] = images[image_id_selected_l]
 
     new_masks[:len(image_id_selected_h)] = np.array(prob)[image_id_selected_h]
-    new_masks[-len(image_id_selected_l):] = masks[image_id_selected_l]
+    if delta != 1:
+        new_masks[-len(image_id_selected_l):] = masks[image_id_selected_l]
 
     rest_images = images[image_id_rest]
     rest_masks = masks[image_id_rest]
