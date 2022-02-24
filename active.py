@@ -246,9 +246,10 @@ if __name__ == '__main__':
     seed = 2
     path = r'../quality/high/'
     initial_learning_rate = 0.0001
-    epochs = 100
+    epochs = 300
     n_classes = 2
     loss_fn = dice_loss
+    inf = 5
     # delta = 0.06
 
     # initial datasets, validation and test datasets
@@ -283,7 +284,7 @@ if __name__ == '__main__':
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     # for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
-    for delta in [0, 0.25, 0.50, 0.75, 1.00]:
+    for delta in [0, 0.25, 0.5, 0.75, 1.00]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
@@ -291,7 +292,7 @@ if __name__ == '__main__':
         print('initial model prediction on test datasets')
         # i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1,
         #                                  delta=delta)
-        i_tree_iou, i_o_iou = model_test_1(model, test_dataset_image, test_dataset_mask, inf=5)
+        i_tree_iou, i_o_iou = model_test_1(model, test_dataset_image, test_dataset_mask, inf=inf)
         tree_ious.append(i_tree_iou)
         o_ious.append(i_o_iou)
         model_labeled_r, human_labeled_r = [0], [40]
@@ -318,7 +319,7 @@ if __name__ == '__main__':
                                                                                     active_dataset_image,
                                                                                     active_dataset_mask,
                                                                                     active_image_ids,
-                                                                                    inf=5,
+                                                                                    inf=inf,
                                                                                     delta=delta)
             with pd.ExcelWriter(r'checkpoints/active/high/new_percent/r.xlsx', engine='openpyxl', mode='a',
                                 if_sheet_exists='replace') as writer:
@@ -336,8 +337,8 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/new_percent/100e/{delta*100}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/100e/{delta*100}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
@@ -387,7 +388,7 @@ if __name__ == '__main__':
             print(f'Active {i} prediction on test datasets')
             # tree_iou_1, o_iou_1 = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=i,
             #                                  delta=delta)
-            tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=5)
+            tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=inf)
             tree_ious.append(tree_iou_1)
             o_ious.append(o_iou_1)
 
