@@ -4,6 +4,7 @@ from glob import glob
 import os
 from utility import get_image
 import tensorflow as tf
+import random
 # import time
 # from matplotlib import pyplot as plt
 # from loss import log_conv
@@ -34,7 +35,7 @@ def get_path(path, mode='train', seed=2, active=0):
     return image_path, mask_path, image_id
 
 
-def get_split_path(path, mode='train', seed=2):
+def get_split_path(path, mode='train', seed=2, shuffle=False):
     # get image and mask path according to the mode (train, valid, test)
     images_path = sorted(glob(os.path.join(r'../quality/', r"images/*.tif")))
     masks_path = sorted(glob(os.path.join(path, '*.tif')))
@@ -48,7 +49,9 @@ def get_split_path(path, mode='train', seed=2):
         idx = train_idx[280:]
     else:
         idx = test_idx
-
+    if shuffle is True:
+        random.seed(0)
+        random.shuffle(idx)
     image_path = [images_path[i] for i in idx]
     mask_path = [masks_path[i] for i in idx]
     image_id = [int(im.split('_')[-1].split('.')[0]) for im in image_path]
