@@ -243,7 +243,7 @@ if __name__ == '__main__':
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     # some parameters
-    seed = 2
+    shuffle = 0
     path = r'../quality/high/'
     initial_learning_rate = 0.0001
     epochs = 300
@@ -256,18 +256,13 @@ if __name__ == '__main__':
     initial_image_path, initial_mask_path, initial_image_id,\
         active_image_path, active_mask_path, active_image_id = get_split_path(path=path,
                                                                               mode='train',
-                                                                              seed=seed,
-                                                                              shuffle=False)
+                                                                              shuffle=shuffle)
 
     valid_image_path, valid_mask_path, valid_image_id = get_path(path=path,
-                                                                 mode='valid',
-                                                                 seed=seed,
-                                                                 active=0)
+                                                                 mode='valid')
 
     test_image_path, test_mask_path, test_image_id = get_path(path=r'../quality/high/',
-                                                              mode='test',
-                                                              seed=seed,
-                                                              active=0)
+                                                              mode='test')
 
     print(f'initial datasets length: {len(initial_image_id)}')
     print('initial datasets id:')
@@ -285,7 +280,7 @@ if __name__ == '__main__':
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     # for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
-    for delta in [0, 0.25, 0.50, 0.75, 1.00]:
+    for delta in [0]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
