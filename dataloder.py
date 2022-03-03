@@ -120,6 +120,7 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
         datasets = datasets.map(augment_function_valid, num_parallel_calls=AUTOTUNE)
     else:
         pass
+    datasets = datasets.shuffle(len(datasets))
     datasets = datasets.batch(batch_size)
     datasets = datasets.prefetch(1)
     # datasets = datasets.with_options(options)
@@ -128,6 +129,12 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
 
 
 # if __name__ == '__main__':
+#     initial_image_path, initial_mask_path, initial_image_id, rest_image_path, rest_mask_path, rest_image_id = get_split_path(
+#         path=r'../quality/high',
+#         mode='train',
+#         shuffle=0
+#     )
+
 #     image_path, mask_path, image_i = get_path(path=r'../quality/high/',
 #                                               mode='test',
 #                                               seed=2,
