@@ -257,7 +257,7 @@ if __name__ == '__main__':
         active_image_path, active_mask_path, active_image_id = get_split_path(path=path,
                                                                               mode='train',
                                                                               seed=seed,
-                                                                              shuffle=True)
+                                                                              shuffle=False)
 
     valid_image_path, valid_mask_path, valid_image_id = get_path(path=path,
                                                                  mode='valid',
@@ -285,7 +285,7 @@ if __name__ == '__main__':
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     # for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
-    for delta in [0]:
+    for delta in [0, 0.25, 0.50, 0.75, 1.00]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
