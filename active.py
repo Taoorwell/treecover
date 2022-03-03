@@ -46,7 +46,7 @@ def initial_model_train(initial_dataset, validation_dataset):
                   epochs=epochs,
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
-                  verbose=0,
+                  verbose=1,
                   callbacks=[learning_rate_scheduler, tensorboard_callbacks])
         model.save(f'checkpoints/active/high/unet_active_1')
 
@@ -71,7 +71,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
               epochs=epochs,
               validation_data=validation_dataset,
               validation_steps=len(validation_dataset),
-              verbose=0,
+              verbose=1,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
     model.save(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}')
