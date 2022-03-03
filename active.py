@@ -246,7 +246,7 @@ if __name__ == '__main__':
     shuffle = 0
     path = r'../quality/high/'
     initial_learning_rate = 0.0001
-    epochs = 300
+    epochs = 100
     n_classes = 2
     loss_fn = dice_loss
     inf = 5
@@ -340,39 +340,41 @@ if __name__ == '__main__':
                                                                    'tree_iou': tree_iou},
                                                    compile=True)
             else:
-                model = retrain_model(new_dataset, validation_dataset, delta, i)
-                print(f'model {delta} {i} train from scratch finished')
-                # if i == 2:
-                #     model = tf.keras.models.load_model(
-                #         f'checkpoints/active/high/unet_active_{i-1}',
-                #         custom_objects={'dice_loss': dice_loss,
-                #                         'iou': iou,
-                #                         'tree_iou': tree_iou},
-                #         compile=True)
-                # else:
-                #     model = tf.keras.models.load_model(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i-1}',
-                #                                        custom_objects={'dice_loss': dice_loss,
-                #                                                        'iou': iou,
-                #                                                        'tree_iou': tree_iou},
-                #                                        compile=True)
-                #
-                # model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-                # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-                # # tensorboard
-                # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-                #     log_dir=f'tb_callback_dir/active/high/percent/{int(delta)}/unet_active_{i}',
-                #     histogram_freq=1)
-                # model.fit(new_dataset,
-                #           steps_per_epoch=len(new_dataset),
-                #           epochs=epochs,
-                #           validation_data=validation_dataset,
-                #           validation_steps=len(validation_dataset),
-                #           verbose=0,
-                #           callbacks=[learning_rate_scheduler, tensorboard_callbacks]
-                #           )
-                #
-                # model.save(f'checkpoints/active/high/percent/{int(delta)}/unet_active_{i}')
-                # print(f'unet_active_{delta}_{i} saved!')
+                # re train model from scratch
+                # model = retrain_model(new_dataset, validation_dataset, delta, i)
+                # print(f'model {delta} {i} train from scratch finished')
+                # re train model based on previous model weights
+                if i == 2:
+                    model = tf.keras.models.load_model(
+                        f'checkpoints/active/high/unet_active_{i-1}',
+                        custom_objects={'dice_loss': dice_loss,
+                                        'iou': iou,
+                                        'tree_iou': tree_iou},
+                        compile=True)
+                else:
+                    model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{int(delta)}/unet_active_{i-1}',
+                                                       custom_objects={'dice_loss': dice_loss,
+                                                                       'iou': iou,
+                                                                       'tree_iou': tree_iou},
+                                                       compile=True)
+
+                model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+                learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+                # tensorboard
+                tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+                    log_dir=f'tb_callback_dir/active/high/new_percent/{int(delta)}/unet_active_{i}',
+                    histogram_freq=1)
+                model.fit(new_dataset,
+                          steps_per_epoch=len(new_dataset),
+                          epochs=epochs,
+                          validation_data=validation_dataset,
+                          validation_steps=len(validation_dataset),
+                          verbose=0,
+                          callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+                          )
+
+                model.save(f'checkpoints/active/high/new_percent/{int(delta)}/unet_active_{i}')
+                print(f'unet_active_{delta}_{i} saved!')
 
             initial_dataset_image_0 = new_images
             initial_dataset_mask_0 = new_masks
