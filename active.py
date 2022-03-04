@@ -43,7 +43,7 @@ def initial_model_train(initial_dataset, validation_dataset):
                                                                histogram_freq=1)
         model.fit(initial_dataset,
                   steps_per_epoch=len(initial_dataset),
-                  epochs=epochs,
+                  epochs=300,
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
                   verbose=1,
@@ -369,7 +369,7 @@ if __name__ == '__main__':
                           epochs=epochs,
                           validation_data=validation_dataset,
                           validation_steps=len(validation_dataset),
-                          verbose=0,
+                          verbose=1,
                           callbacks=[learning_rate_scheduler, tensorboard_callbacks]
                           )
 
