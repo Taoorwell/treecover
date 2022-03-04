@@ -23,8 +23,8 @@ def lr_cosine_decay(e):
 
 
 def initial_model_train(initial_dataset, validation_dataset):
-    if os.path.exists(f'checkpoints/active/high/unet_active_1'):
-        model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_1',
+    if os.path.exists(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1'):
+        model = tf.keras.models.load_model(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
@@ -39,7 +39,7 @@ def initial_model_train(initial_dataset, validation_dataset):
         # model.summary()
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
         # tensorboard
-        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/active/high/unet_active_1',
+        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/active/high/initial/shuffle_{shuffle}/unet_active_1',
                                                                histogram_freq=1)
         model.fit(initial_dataset,
                   steps_per_epoch=len(initial_dataset),
@@ -48,7 +48,7 @@ def initial_model_train(initial_dataset, validation_dataset):
                   validation_steps=len(validation_dataset),
                   verbose=1,
                   callbacks=[learning_rate_scheduler, tensorboard_callbacks])
-        model.save(f'checkpoints/active/high/unet_active_1')
+        model.save(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1')
 
     return model
 
@@ -64,7 +64,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/new_percent/{delta*100}/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
@@ -74,7 +74,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
               verbose=1,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
-    model.save(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}')
+    model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}')
     print(f'unet_active_{delta}_{i} saved!')
 
     return model
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     print(f'initial, validation and test tensorflow datasets loading successfully')
 
     # for delta in [0.0, 0.03, 0.05, 0.1, 0.5]:
-    for delta in [0]:
+    for delta in [0.2, 0.4, 0.6, 0.8, 1.0]:
         tree_ious, o_ious = [], []
 
         model = initial_model_train(initial_dataset, validation_dataset)
@@ -317,7 +317,8 @@ if __name__ == '__main__':
                                                                                     active_image_ids,
                                                                                     inf=inf,
                                                                                     delta=delta)
-            with pd.ExcelWriter(r'checkpoints/active/high/new_percent/r.xlsx', engine='openpyxl', mode='a',
+            with pd.ExcelWriter(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/r_{shuffle}.xlsx',
+                                engine='openpyxl', mode='a',
                                 if_sheet_exists='replace') as writer:
                 df.to_excel(writer, sheet_name=f'active_e_{delta}_{i}')
 
@@ -333,8 +334,8 @@ if __name__ == '__main__':
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{delta*100}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
@@ -346,13 +347,13 @@ if __name__ == '__main__':
                 # re train model based on previous model weights
                 if i == 2:
                     model = tf.keras.models.load_model(
-                        f'checkpoints/active/high/unet_active_{i-1}',
+                        f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_{i-1}',
                         custom_objects={'dice_loss': dice_loss,
                                         'iou': iou,
                                         'tree_iou': tree_iou},
                         compile=True)
                 else:
-                    model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/{int(delta)}/unet_active_{i-1}',
+                    model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i-1}',
                                                        custom_objects={'dice_loss': dice_loss,
                                                                        'iou': iou,
                                                                        'tree_iou': tree_iou},
@@ -362,7 +363,7 @@ if __name__ == '__main__':
                 learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
                 # tensorboard
                 tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-                    log_dir=f'tb_callback_dir/active/high/new_percent/{int(delta)}/unet_active_{i}',
+                    log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}',
                     histogram_freq=1)
                 model.fit(new_dataset,
                           steps_per_epoch=len(new_dataset),
@@ -373,7 +374,7 @@ if __name__ == '__main__':
                           callbacks=[learning_rate_scheduler, tensorboard_callbacks]
                           )
 
-                model.save(f'checkpoints/active/high/new_percent/{int(delta)}/unet_active_{i}')
+                model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}')
                 print(f'unet_active_{delta}_{i} saved!')
 
             initial_dataset_image_0 = new_images
@@ -396,7 +397,7 @@ if __name__ == '__main__':
                              'tree iou': tree_ious,
                              'overall iou': o_ious,
                              })
-        with pd.ExcelWriter(r'checkpoints/active/high/new_percent/r.xlsx',
+        with pd.ExcelWriter(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/r_{shuffle}.xlsx',
                             engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             data.to_excel(writer, sheet_name=f'active_data_{delta}')
         print(data)
