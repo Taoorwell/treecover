@@ -1,5 +1,5 @@
-import os
-from utility import get_image
+# import os
+from utility import *
 import pandas as pd
 import tensorflow as tf
 import numpy as np
@@ -28,7 +28,9 @@ def initial_model_train(initial_dataset, validation_dataset):
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
+        print('Found existing model and load successfully')
     else:
+        print('Un-found existing model and need to re train model')
         optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
 
         strategy = tf.distribute.MirroredStrategy()
@@ -49,7 +51,7 @@ def initial_model_train(initial_dataset, validation_dataset):
                   verbose=1,
                   callbacks=[learning_rate_scheduler, tensorboard_callbacks])
         model.save(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1')
-
+        print('initial model training finished')
     return model
 
 
@@ -64,7 +66,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
@@ -74,7 +76,7 @@ def retrain_model(new_dataset, validation_dataset, delta, i):
               verbose=1,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
-    model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}')
+    model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}')
     print(f'unet_active_{delta}_{i} saved!')
 
     return model
@@ -250,6 +252,7 @@ if __name__ == '__main__':
     n_classes = 2
     loss_fn = dice_loss
     inf = 5
+    scratch = False
     # delta = 0.06
 
     # initial datasets, validation and test datasets
@@ -332,50 +335,63 @@ if __name__ == '__main__':
             new_dataset = dataset(new_images, new_masks, mode='train', batch_size=4)
             print(f'Concatenate datasets built for re-train model')
             print(f'Concatenate datasets length: {len(new_dataset) * 4}')
-
+            # print('Ploting some sample from new datasets for checking')
+            # for new_i, new_m in new_dataset:
+            #     print(new_i.shape, new_m.shape)
+            #     plt.subplot(121)
+            #     plt.imshow(new_i.numpy()[0, :, :, :3])
+            #     plt.subplot(122)
+            #     plt.imshow(rgb_mask(new_m.numpy()[0, :, :, 1]), alpha=1)
+            #     plt.show()
+            # pass
             print(f'Re-train model...')
-            if os.path.exists(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}'):
-                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{delta*100}/unet_active_{i}',
+            if os.path.exists(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}'):
+                model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}',
                                                    custom_objects={'dice_loss': dice_loss,
                                                                    'iou': iou,
                                                                    'tree_iou': tree_iou},
                                                    compile=True)
+                print('Found existing model, load model finished')
             else:
                 # re train model from scratch
                 # model = retrain_model(new_dataset, validation_dataset, delta, i)
                 # print(f'model {delta} {i} train from scratch finished')
                 # re train model based on previous model weights
-                if i == 2:
-                    model = tf.keras.models.load_model(
-                        f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_{i-1}',
-                        custom_objects={'dice_loss': dice_loss,
-                                        'iou': iou,
-                                        'tree_iou': tree_iou},
-                        compile=True)
+                print('Un-found existing model, need to train model based on previously model or train from scratch')
+                if scratch is True:
+                    model = retrain_model(new_dataset, validation_dataset, delta, i)
                 else:
-                    model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i-1}',
-                                                       custom_objects={'dice_loss': dice_loss,
-                                                                       'iou': iou,
-                                                                       'tree_iou': tree_iou},
-                                                       compile=True)
+                    if i == 2:
+                        model = tf.keras.models.load_model(
+                            f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_{i-1}',
+                            custom_objects={'dice_loss': dice_loss,
+                                            'iou': iou,
+                                            'tree_iou': tree_iou},
+                            compile=True)
+                    else:
+                        model = tf.keras.models.load_model(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i-1}',
+                                                           custom_objects={'dice_loss': dice_loss,
+                                                                           'iou': iou,
+                                                                           'tree_iou': tree_iou},
+                                                           compile=True)
 
-                model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-                learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-                # tensorboard
-                tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-                    log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}',
-                    histogram_freq=1)
-                model.fit(new_dataset,
-                          steps_per_epoch=len(new_dataset),
-                          epochs=epochs,
-                          validation_data=validation_dataset,
-                          validation_steps=len(validation_dataset),
-                          verbose=1,
-                          callbacks=[learning_rate_scheduler, tensorboard_callbacks]
-                          )
+                    model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+                    learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+                    # tensorboard
+                    tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+                        log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}',
+                        histogram_freq=1)
+                    model.fit(new_dataset,
+                              steps_per_epoch=len(new_dataset),
+                              epochs=epochs,
+                              validation_data=validation_dataset,
+                              validation_steps=len(validation_dataset),
+                              verbose=1,
+                              callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+                              )
 
-                model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}')
-                print(f'unet_active_{delta}_{i} saved!')
+                    model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/{int(delta*100)}/unet_active_{i}')
+                    print(f'unet_active_{delta}_{i} saved!')
 
             initial_dataset_image_0 = new_images
             initial_dataset_mask_0 = new_masks
