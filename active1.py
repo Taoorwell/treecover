@@ -4,7 +4,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 from loss import dice_loss, iou, tree_iou
-from dataloder import get_path, dataset
+from dataloder import get_path, dataset, get_split_path
 from unets import U_Net
 from test_pre import predict_on_array
 
@@ -23,12 +23,14 @@ def lr_cosine_decay(e):
 
 
 def initial_model_train(initial_dataset, validation_dataset):
-    if os.path.exists(r'checkpoints/active/high/unet_active_1'):
-        model = tf.keras.models.load_model(r'checkpoints/active/high/unet_active_1',
+    if os.path.exists(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1'):
+        model = tf.keras.models.load_model(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1',
                                            custom_objects={'dice_loss': dice_loss,
                                                            'iou': iou,
                                                            'tree_iou': tree_iou})
+        print('Found existing model and load successfully')
     else:
+        print('Un-found existing model and need to re train model')
         optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
 
         strategy = tf.distribute.MirroredStrategy()
@@ -37,21 +39,19 @@ def initial_model_train(initial_dataset, validation_dataset):
             model = U_Net(input_shape=(256, 256, 7), n_classes=n_classes, rate=.1, mc=True, residual=True)
             model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
         # model.summary()
-
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-
         # tensorboard
-        # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir='tb_callback_dir/active/unet_active_1',
-        #                                                        histogram_freq=1)
-
+        tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/active/high/initial/shuffle_{shuffle}/unet_active_1',
+                                                               histogram_freq=1)
         model.fit(initial_dataset,
                   steps_per_epoch=len(initial_dataset),
-                  epochs=epochs,
+                  epochs=300,
                   validation_data=validation_dataset,
                   validation_steps=len(validation_dataset),
-                  verbose=0,
-                  callbacks=[learning_rate_scheduler])
-        model.save(r'checkpoints/active/high/unet_active_1')
+                  verbose=1,
+                  callbacks=[learning_rate_scheduler, tensorboard_callbacks])
+        model.save(f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_1')
+        print('initial model training finished')
     return model
 
 
@@ -66,17 +66,17 @@ def retrain_model(new_dataset, validation_dataset, i):
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
     tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
-        log_dir=f'tb_callback_dir/active/high/percent/decay/unet_active_{i}',
+        log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i}',
         histogram_freq=1)
     model.fit(new_dataset,
               steps_per_epoch=len(new_dataset),
               epochs=epochs,
               validation_data=validation_dataset,
               validation_steps=len(validation_dataset),
-              verbose=0,
+              verbose=1,
               callbacks=[learning_rate_scheduler, tensorboard_callbacks]
               )
-    model.save(f'checkpoints/active/high/percent/decay/unet_active_{i}')
+    model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i}')
     print(f'unet_active_{i} saved!')
 
     return model
@@ -121,7 +121,7 @@ def model_test_1(model, images, masks, inf):
     true_masks_cat, pre_masks_cat = [], []
     for im, ms in zip(images, masks):
         image_arr, mask_arr = im, ms
-        outputs = np.zeros((inf, ) + mask_arr.shape, dtype=np.float32)
+        outputs = np.zeros((inf,) + mask_arr.shape, dtype=np.float32)
         for f in range(inf):
             output_1 = predict_on_array(model=model,
                                         arr=image_arr,
@@ -151,7 +151,7 @@ def model_pred(model, images, masks, images_ids, inf, delta):
         E1 = np.mean(E1)
         # second
         b1, b2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
-        E2 = -(b1 * np.log2(b1+eps) + b2 * np.log2(b2+eps))
+        E2 = -(b1 * np.log2(b1 + eps) + b2 * np.log2(b2 + eps))
         E2 = np.mean(E2)
         # # third
         v1, v2 = np.mean(outputs[..., 0], axis=0), np.mean(outputs[..., 1], axis=0)
@@ -189,24 +189,53 @@ def model_pred(model, images, masks, images_ids, inf, delta):
                        'Tree_iou': t_c,
                        'O_iou': o_c})
     print(df)
-    if delta >= 10:
-        print(f'first {0.01*delta:.2%} Percentage as model labelled masks')
+    # filter images strategy area
+    image_id_selected_h = np.argsort(np.array(entropy1))[:int(40 * delta)]
+    print(f'number of high: {len(image_id_selected_h)}, '
+          f'high confidence index:{np.array(images_ids)[image_id_selected_h]}')
 
-        image_id_selected = np.argsort(np.array(entropy1))[:int(len(entropy1)*delta*0.01)]
-        print(f'number of high: {len(image_id_selected)}, '
-              f'high confidence index:{np.array(images_ids)[image_id_selected]}')
-        # replace mask from model prediction
-        masks[image_id_selected] = np.array(prob)[image_id_selected]
-        print(f'mask replacing finished!')
-    else:
-        image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
-        print(f'number of high: {len(image_id_selected)}, '
-              f'high confidence index:{image_id_selected}')
-        # replace mask from model prediction
-        masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
-        print(f'mask replacing finished!')
+    image_id_selected_l = np.array([], dtype=np.int64) if (1 - delta) == 0 else np.argsort(np.array(entropy1))[
+                                                                                -int(40 * (1 - delta)):]
+    print(f'number of low: {len(image_id_selected_l)}, '
+          f'low confidence index:{np.array(images_ids)[image_id_selected_l]}')
 
-    return images, masks, prob, df, image_id_selected
+    image_id_rest = np.argsort(np.array(entropy1))[int(40 * delta):] if (1 - delta) == 0 else np.argsort(
+        np.array(entropy1))[int(40 * delta): -int(40 * (1 - delta))]
+    rest_image_ids = np.array(images_ids)[image_id_rest]
+    print(f'number of rest: {len(image_id_rest)}, '
+          f'low confidence index:{rest_image_ids}')
+
+    new_images, new_masks = np.zeros_like(images[:40]), np.zeros_like(masks[:40])
+
+    new_images[:len(image_id_selected_h)] = images[image_id_selected_h]
+    if delta != 1:
+        new_images[-len(image_id_selected_l):] = images[image_id_selected_l]
+
+    new_masks[:len(image_id_selected_h)] = np.array(prob)[image_id_selected_h]
+    if delta != 1:
+        new_masks[-len(image_id_selected_l):] = masks[image_id_selected_l]
+
+    rest_images = images[image_id_rest]
+    rest_masks = masks[image_id_rest]
+
+    # if delta >= 10:
+    #     print(f'first {0.1*delta:.2%} Percentage as model labelled masks')
+    #
+    #     image_id_selected = np.argsort(np.array(entropy1))[:int(len(entropy1)*delta*0.01)]
+    #     print(f'number of high: {len(image_id_selected)}, '
+    #           f'high confidence index:{np.array(images_ids)[image_id_selected]}')
+    #     # replace mask from model prediction
+    #     masks[image_id_selected] = np.array(prob)[image_id_selected]
+    #     print(f'mask replacing finished!')
+    # else:
+    #     image_id_selected = np.array(images_ids)[np.array(entropy1) < delta]
+    #     print(f'number of high: {len(image_id_selected)}, '
+    #           f'high confidence index:{image_id_selected}')
+    #     # replace mask from model prediction
+    #     masks[np.array(entropy1) < delta] = np.array(prob)[np.array(entropy1) < delta]
+    #     print(f'mask replacing finished!')
+
+    return new_images, new_masks, df, rest_images, rest_masks, rest_image_ids
 
 # put new images and masks with previous datasets together.
 
@@ -216,30 +245,26 @@ if __name__ == '__main__':
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     # some parameters
-    seed = 2
+    shuffle = 0
     path = r'../quality/high/'
     initial_learning_rate = 0.0001
-    epochs = 100
+    epochs = 300
     n_classes = 2
     loss_fn = dice_loss
-    # deltas = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01]
-    # deltas = [0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
-    deltas = [20, 30, 40, 50, 60, 70]
+    inf = 5
+    deltas = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    scratch = True
     # initial datasets, validation and test datasets
-    initial_image_path, initial_mask_path, initial_image_id = get_path(path=path,
-                                                                       mode='train',
-                                                                       seed=seed,
-                                                                       active=1)
+    initial_image_path, initial_mask_path, initial_image_id,\
+        active_image_path, active_mask_path, active_image_id = get_split_path(path=path,
+                                                                              mode='train',
+                                                                              shuffle=shuffle)
 
     valid_image_path, valid_mask_path, valid_image_id = get_path(path=path,
-                                                                 mode='valid',
-                                                                 seed=seed,
-                                                                 active=0)
+                                                                 mode='valid')
 
     test_image_path, test_mask_path, test_image_id = get_path(path=r'../quality/high/',
-                                                              mode='test',
-                                                              seed=seed,
-                                                              active=0)
+                                                              mode='test')
 
     print(f'initial datasets length: {len(initial_image_id)}')
     print('initial datasets id:')
@@ -261,37 +286,34 @@ if __name__ == '__main__':
     model = initial_model_train(initial_dataset, validation_dataset)
     print('initial model loaded successfully')
     print('initial model prediction on test datasets')
-    i_tree_iou, i_o_iou = model_test(model, test_dataset_image, test_dataset_mask, test_image_id, inf=5, n=1)
+    i_tree_iou, i_o_iou = model_test_1(model, test_dataset_image, test_dataset_mask, inf=inf)
     tree_ious.append(i_tree_iou)
     o_ious.append(i_o_iou)
     model_labeled_r, human_labeled_r = [0], [40]
+    active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_image_path,
+                                                                                 active_mask_path)
+    active_image_ids = active_image_id
     for i, de in zip(np.arange(2, 8), deltas):
         print(f'{i-1} Active learning starting! ')
         # Get active 2 path dataset
-        active_image_path, active_mask_path, active_image_id = get_path(path=path,
-                                                                        mode='train',
-                                                                        seed=seed,
-                                                                        active=i)
-        active_dataset_image, active_dataset_mask = get_active_image_mask_array_list(active_image_path,
-                                                                                     active_mask_path)
-
         print(f'{i} new batch active datasets loading successfully')
         print(f'new batch active datasets length: {len(active_image_id)}')
         print(f'new batch active datasets id:{active_image_id}')
 
         # model_test(initial_model, test_dataset, inf=5)
         print(f'model prediction on new batch active datasets')
-        images, masks, prob, df, image_id_selected = model_pred(model,
-                                                                active_dataset_image,
-                                                                active_dataset_mask,
-                                                                active_image_id,
-                                                                inf=5,
-                                                                delta=de)
-        with pd.ExcelWriter(r'checkpoints/active/high/percent/decay/r.xlsx', engine='openpyxl', mode='a',
+        images, masks, df, rest_images, rest_masks, rest_image_ids = model_pred(model,
+                                                                                active_dataset_image,
+                                                                                active_dataset_mask,
+                                                                                active_image_ids,
+                                                                                inf=inf,
+                                                                                delta=de)
+        with pd.ExcelWriter(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/r_{shuffle}.xlsx',
+                            engine='openpyxl', mode='a',
                             if_sheet_exists='replace') as writer:
-            df.to_excel(writer, sheet_name=f'active_e_{i}')
+            df.to_excel(writer, sheet_name=f'active_e_{de}_{i}')
 
-        model_labeled = len(image_id_selected)
+        model_labeled = int(40 * de)
         human_labeled = 40 - model_labeled
         model_labeled_r.append(model_labeled)
         human_labeled_r.append(human_labeled)
@@ -303,52 +325,59 @@ if __name__ == '__main__':
         print(f'Concatenate datasets length: {len(new_dataset) * 4}')
 
         print(f'Re-train model...')
-        if os.path.exists(f'checkpoints/active/high/percent/decay/unet_active_{i}'):
-            model = tf.keras.models.load_model(f'checkpoints/active/high/percent/decay/unet_active_{i}',
-                                               custom_objects={'dice_loss': dice_loss,
-                                                               'iou': iou,
-                                                               'tree_iou': tree_iou},
-                                               compile=True)
+        if os.path.exists(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i}'):
+            model = tf.keras.models.load_model(
+                f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i}',
+                custom_objects={'dice_loss': dice_loss,
+                                'iou': iou,
+                                'tree_iou': tree_iou},
+                compile=True)
+            print('Found existing model, load model finished')
         else:
-            model = retrain_model(new_dataset, validation_dataset, i)
-            # pass
-            # if i == 2:
-            #     model = tf.keras.models.load_model(f'checkpoints/active/high/unet_active_{i-1}',
-            #                                        custom_objects={'dice_loss': dice_loss,
-            #                                                        'iou': iou,
-            #                                                        'tree_iou': tree_iou},
-            #                                        compile=True)
-            # else:
-            #     model = tf.keras.models.load_model(f'checkpoints/active/high/decay/unet_active_{i-1}',
-            #                                        custom_objects={'dice_loss': dice_loss,
-            #                                                        'iou': iou,
-            #                                                        'tree_iou': tree_iou},
-            #                                        compile=True)
-            #
-            # model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
-            # learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
-            # # tensorboard
-            # tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=
-            #                                                        f'tb_callback_dir/active/high/decay/unet_active_{i}',
-            #                                                        histogram_freq=1)
-            #
-            # model.fit(new_dataset,
-            #           steps_per_epoch=len(new_dataset),
-            #           epochs=epochs,
-            #           validation_data=validation_dataset,
-            #           validation_steps=len(validation_dataset),
-            #           verbose=0,
-            #           callbacks=[learning_rate_scheduler, tensorboard_callbacks]
-            #           )
-            #
-            # model.save(f'checkpoints/active/high/decay/unet_active_{i}')
-            # print(f'unet_active_{i} saved!')
+            if scratch is True:
+                model = retrain_model(new_dataset, validation_dataset, i)
+            else:
+                if i == 2:
+                    model = tf.keras.models.load_model(
+                        f'checkpoints/active/high/initial/shuffle_{shuffle}/unet_active_{i - 1}',
+                        custom_objects={'dice_loss': dice_loss,
+                                        'iou': iou,
+                                        'tree_iou': tree_iou},
+                        compile=True)
+                else:
+                    model = tf.keras.models.load_model(
+                        f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i - 1}',
+                        custom_objects={'dice_loss': dice_loss,
+                                        'iou': iou,
+                                        'tree_iou': tree_iou},
+                        compile=True)
+
+                model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
+                learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
+                # tensorboard
+                tensorboard_callbacks = tf.keras.callbacks.TensorBoard(
+                    log_dir=f'tb_callback_dir/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i}',
+                    histogram_freq=1)
+                model.fit(new_dataset,
+                          steps_per_epoch=len(new_dataset),
+                          epochs=epochs,
+                          validation_data=validation_dataset,
+                          validation_steps=len(validation_dataset),
+                          verbose=1,
+                          callbacks=[learning_rate_scheduler, tensorboard_callbacks]
+                          )
+
+                model.save(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/unet_active_{i}')
+                print(f'unet_active_{de}_{i} saved!')
 
         initial_dataset_image = new_images
         initial_dataset_mask = new_masks
+        active_dataset_image = rest_images
+        active_dataset_mask = rest_masks
+        active_image_ids = rest_image_ids
         # new model for prediction
         print(f'Active {i} prediction on test datasets')
-        tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=10)
+        tree_iou_1, o_iou_1 = model_test_1(model, test_dataset_image, test_dataset_mask, inf=inf)
         tree_ious.append(tree_iou_1)
         o_ious.append(o_iou_1)
 
@@ -357,8 +386,8 @@ if __name__ == '__main__':
                          'model label sample': model_labeled_r,
                          'tree iou': tree_ious,
                          'overall iou': o_ious,
-                         'delta': [0, 20, 30, 40, 50, 60, 70]})
-    with pd.ExcelWriter(r'checkpoints/active/high/percent/decay/r.xlsx',
+                         'delta': [0, 50, 60, 70, 80, 90, 100]})
+    with pd.ExcelWriter(f'checkpoints/active/high/new_percent/shuffle_{shuffle}/decay/r_{shuffle}.xlsx',
                         engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         data.to_excel(writer, sheet_name=f'active_data_decay')
     print(data)
