@@ -57,11 +57,11 @@ def initial_model_train(initial_dataset, validation_dataset):
 
 def retrain_model(new_dataset, validation_dataset, i):
     optimizer = tf.optimizers.Adam(learning_rate=initial_learning_rate)
-    strategy = tf.distribute.MirroredStrategy()
-    with strategy.scope():
-        # Monte Carlo Dropout
-        model = U_Net(input_shape=(256, 256, 7), n_classes=n_classes, rate=.1, mc=True, residual=True)
-        model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
+    # strategy = tf.distribute.MirroredStrategy()
+    # with strategy.scope():
+    #     # Monte Carlo Dropout
+    model = U_Net(input_shape=(256, 256, 7), n_classes=n_classes, rate=.1, mc=True, residual=True)
+    model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
     model.compile(optimizer=model.optimizer, loss=model.loss, metrics=[iou, tree_iou])
     learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
     # tensorboard
@@ -252,7 +252,8 @@ if __name__ == '__main__':
     n_classes = 2
     loss_fn = dice_loss
     inf = 5
-    deltas = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # deltas = [0.6, 0.7, 0.8, 0.9, 1.0, 1.0]
+    deltas = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     scratch = True
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id,\
