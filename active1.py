@@ -245,14 +245,17 @@ if __name__ == '__main__':
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     # some parameters
-    shuffle = 0
+    shuffle = 1
     path = r'../quality/high/'
     initial_learning_rate = 0.0001
     epochs = 300
     n_classes = 2
     loss_fn = dice_loss
     inf = 5
+    # deltas = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     deltas = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    # deltas = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # deltas = [0.6, 0.7, 0.8, 0.9, 1.0, 1.0]
     scratch = True
     # initial datasets, validation and test datasets
     initial_image_path, initial_mask_path, initial_image_id,\
