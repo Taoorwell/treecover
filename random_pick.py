@@ -53,9 +53,9 @@ def model_test(model, images_path, masks_path):
 if __name__ == '__main__':
     q = 'high'
     mask_path = f'../quality/{q}/'
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
+    # gpus = tf.config.experimental.list_physical_devices('GPU')
+    # for gpu in gpus:
+    #     tf.config.experimental.set_memory_growth(gpu, True)
 
     epochs = 150
     n_classes = 2
