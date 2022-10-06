@@ -220,52 +220,115 @@ layers in the input array.
 
 if __name__ == '__main__':
     # Parameter define
-    ks = [259, 215, 210, 66, 150]
-    for k in ks:
-
-    #########################################################################################################
-        image_201_path = f'../quality/images/tile_{k}.tif'
-        image_201 = get_image(image_201_path)
-        # model_high = tf.keras.models.load_model(f'../results/high_low_2/unet_res_high_2',
-        #                                         custom_objects={'dice_loss': dice_loss,
-        #                                                         'iou': iou,
-        #                                                         'tree_iou': tree_iou})
-        # pre_201 = predict_on_array(model=model_high,
-        #                            arr=image_201,
-        #                            in_shape=(256, 256, 7),
-        #                            out_bands=2,
-        #                            stride=200,
-        #                            batchsize=20,
-        #                            augmentation=True,
-        #                            verbose=False,
-        #                            report_time=False)
-        # # print(pre_201.shape)
-        # save_array_to_mat(pre_201, f'../quality/mix/{k}_h.mat')
-        #
-        # model_low = tf.keras.models.load_model(f'../results/high_low_2/unet_res_low_2.h5',
-        #                                        custom_objects={'dice_loss': dice_loss,
-        #                                                        'iou': iou,
-        #                                                        'tree_iou': tree_iou})
-        # pre_201 = predict_on_array(model=model_low,
-        #                            arr=image_201,
-        #                            in_shape=(256, 256, 7),
-        #                            out_bands=2,
-        #                            stride=200,
-        #                            batchsize=20,
-        #                            augmentation=True,
-        #                            verbose=False,
-        #                            report_time=False)
-        # # print(pre_201.shape)
-        # save_array_to_mat(pre_201, f'../quality/mix/{k}_l.mat')
-
-        # print(image_201.shape)
-        for i in np.arange(2, 9, 2):
-            for j in np.arange(4, 8, 1):
-                model_1 = tf.keras.models.load_model(f'../results/mix/random/unet_mix_mask_{i}_{j}',
-                                                     custom_objects={'dice_loss': dice_loss,
-                                                                     'iou': iou,
-                                                                     'tree_iou': tree_iou})
-
+    ks = [71, 174, 66, 150]
+    # shuffle = 2
+    # percent = 100
+    # es = [0, 20, 40, 60, 80, 100]
+    for shuffle in [0, 1, 2]:
+        for k in ks:
+        #########################################################################################################
+            image_201_path = f'../quality/images/tile_{k}.tif'
+            image_201 = get_image(image_201_path)
+        #     # # model_high = tf.keras.models.load_model(f'../results/high_low_2/unet_res_high_2',
+        #     # #                                         custom_objects={'dice_loss': dice_loss,
+        #     # #                                                         'iou': iou,
+        #     # #                                                         'tree_iou': tree_iou})
+        #     # # pre_201 = predict_on_array(model=model_high,
+        #     # #                            arr=image_201,
+        #     # #                            in_shape=(256, 256, 7),
+        #     # #                            out_bands=2,
+        #     # #                            stride=200,
+        #     # #                            batchsize=20,
+        #     # #                            augmentation=True,
+        #     # #                            verbose=False,
+        #     # #                            report_time=False)
+        #     # # # print(pre_201.shape)
+        #     # # save_array_to_mat(pre_201, f'../quality/mix/{k}_h.mat')
+        #     # #
+        #     # # model_low = tf.keras.models.load_model(f'../results/high_low_2/unet_res_low_2.h5',
+        #     # #                                        custom_objects={'dice_loss': dice_loss,
+        #     # #                                                        'iou': iou,
+        #     # #                                                        'tree_iou': tree_iou})
+        #     # # pre_201 = predict_on_array(model=model_low,
+        #     # #                            arr=image_201,
+        #     # #                            in_shape=(256, 256, 7),
+        #     # #                            out_bands=2,
+        #     # #                            stride=200,
+        #     # #                            batchsize=20,
+        #     # #                            augmentation=True,
+        #     # #                            verbose=False,
+        #     # #                            report_time=False)
+        #     # # # print(pre_201.shape)
+        #     # # save_array_to_mat(pre_201, f'../quality/mix/{k}_l.mat')
+        #     #
+        #     # # print(image_201.shape)
+        #     # for i in np.arange(2, 9, 2):
+        #     #     for j in np.arange(4, 8, 1):
+        #     #         model_1 = tf.keras.models.load_model(f'../results/mix/random/unet_mix_mask_{i}_{j}',
+        #     #                                              custom_objects={'dice_loss': dice_loss,
+        #     #                                                              'iou': iou,
+        #     #                                                              'tree_iou': tree_iou})
+        #     #
+        #     #         pre_201 = predict_on_array(model=model_1,
+        #     #                                    arr=image_201,
+        #     #                                    in_shape=(256, 256, 7),
+        #     #                                    out_bands=2,
+        #     #                                    stride=200,
+        #     #                                    batchsize=20,
+        #     #                                    augmentation=True,
+        #     #                                    verbose=False,
+        #     #                                    report_time=False)
+        #     #         # print(pre_201.shape)
+        #     #         save_array_to_mat(pre_201, f'../quality/mix/{k}_mix_{i}_{j}.mat')
+        #     #         print(f'mix model {k} {i} {j}, prediction finish')
+        # #################################################################################################################
+        # ############################### active learning ############################
+        # # image_201_path = f'../quality/images/tile_{k}.tif'
+        # # image_201 = get_image(image_201_path)
+        # # model_initial = tf.keras.models.load_model(f'../results/active/low/unet_active_1',
+        # #                                            custom_objects={'dice_loss': dice_loss,
+        # #                                                            'iou': iou,
+        # #                                                            'tree_iou': tree_iou})
+        # # pre_201 = predict_on_array(model=model_initial,
+        # #                            arr=image_201,
+        # #                            in_shape=(256, 256, 7),
+        # #                            out_bands=2,
+        # #                            stride=200,
+        # #                            batchsize=20,
+        # #                            augmentation=True,
+        # #                            verbose=False,
+        # #                            report_time=False)
+        # # save_array_to_mat(pre_201, f'../quality/active/low/{k}_initial.mat')
+        # #
+        # ###
+        #     for e in es:
+        #         for i in np.arange(2, 8, 1):
+        #             model_1 = tf.keras.models.load_model(f'../results/active/low/new_percent/shuffle_{shuffle}/no_scratch/{e}/unet_active_{i}',
+        #                                                  custom_objects={'dice_loss': dice_loss,
+        #                                                                  'iou': iou,
+        #                                                                  'tree_iou': tree_iou})
+        #             outputs_1 = np.zeros((5,) + (image_201.shape[0], image_201.shape[1], 2), dtype=np.float32)
+        #             for j in range(5):
+        #                 pre_201 = predict_on_array(model=model_1,
+        #                                            arr=image_201,
+        #                                            in_shape=(256, 256, 7),
+        #                                            out_bands=2,
+        #                                            stride=200,
+        #                                            batchsize=20,
+        #                                            augmentation=True,
+        #                                            verbose=False,
+        #                                            report_time=False)
+        #                 outputs_1[j] = pre_201
+        #             output_1 = np.mean(outputs_1, axis=0)
+        #             # print(pre_201.shape)
+        #             save_array_to_mat(output_1, f'../quality/active_percent/low/shuffle_{shuffle}/no_scratch/{e}/{k}_active_{i}.mat')
+        #         print(f'shuffle: {shuffle}, active model {e}, prediction finish')
+            model_1 = tf.keras.models.load_model(f'../results/active/low/initial/shuffle_{shuffle}/unet_active_1',
+                                                 custom_objects={'dice_loss': dice_loss,
+                                                                 'iou': iou,
+                                                                 'tree_iou': tree_iou})
+            outputs_1 = np.zeros((5,) + (image_201.shape[0], image_201.shape[1], 2), dtype=np.float32)
+            for j in range(5):
                 pre_201 = predict_on_array(model=model_1,
                                            arr=image_201,
                                            in_shape=(256, 256, 7),
@@ -275,49 +338,12 @@ if __name__ == '__main__':
                                            augmentation=True,
                                            verbose=False,
                                            report_time=False)
-                # print(pre_201.shape)
-                save_array_to_mat(pre_201, f'../quality/mix/{k}_mix_{i}_{j}.mat')
-                print(f'mix model {k} {i} {j}, prediction finish')
-    #################################################################################################################
-    ############################### active learning ############################
-    # image_201_path = f'../quality/images/tile_{k}.tif'
-    # image_201 = get_image(image_201_path)
-    # model_initial = tf.keras.models.load_model(f'../results/active/low/unet_active_1',
-    #                                            custom_objects={'dice_loss': dice_loss,
-    #                                                            'iou': iou,
-    #                                                            'tree_iou': tree_iou})
-    # pre_201 = predict_on_array(model=model_initial,
-    #                            arr=image_201,
-    #                            in_shape=(256, 256, 7),
-    #                            out_bands=2,
-    #                            stride=200,
-    #                            batchsize=20,
-    #                            augmentation=True,
-    #                            verbose=False,
-    #                            report_time=False)
-    # save_array_to_mat(pre_201, f'../quality/active/low/{k}_initial.mat')
-    #
-    # for i in np.arange(2, 8, 1):
-    #     model_1 = tf.keras.models.load_model(f'../results/active/low/decay/old_decay/unet_active_{i}',
-    #                                          custom_objects={'dice_loss': dice_loss,
-    #                                                          'iou': iou,
-    #                                                          'tree_iou': tree_iou})
-    #     outputs_1 = np.zeros((5,) + pre_201.shape, dtype=np.float32)
-    #     for j in range(5):
-    #         pre_201 = predict_on_array(model=model_1,
-    #                                    arr=image_201,
-    #                                    in_shape=(256, 256, 7),
-    #                                    out_bands=2,
-    #                                    stride=200,
-    #                                    batchsize=20,
-    #                                    augmentation=True,
-    #                                    verbose=False,
-    #                                    report_time=False)
-    #         outputs_1[j] = pre_201
-    #     output_1 = np.mean(outputs_1, axis=0)
-    #     # print(pre_201.shape)
-    #     save_array_to_mat(output_1, f'../quality/active/low/{k}_active_{i}.mat')
-    #     print(f'active model {i}, prediction finish')
+                outputs_1[j] = pre_201
+            output_1 = np.mean(outputs_1, axis=0)
+            # print(pre_201.shape)
+            save_array_to_mat(output_1, f'../quality/active_percent/low/shuffle_{shuffle}/{k}_initial.mat')
+            print(f'shuffle {shuffle} image {k} active model, prediction finish')
+
     ####################################################################################################
     # path = r'../quality/high/'
     # width, height = 256, 256

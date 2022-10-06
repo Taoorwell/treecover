@@ -2,7 +2,7 @@ import numpy as np
 import albumentations as a
 from glob import glob
 import os
-from utility import get_image
+from utility import get_image, iou
 import tensorflow as tf
 import random
 # import time
@@ -128,7 +128,27 @@ def dataset(image_path, mask_path, mode, batch_size, image_shape=(256, 256)):
     return datasets
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
+    high_test_image_path, high_test_mask_path, high_test_ids = get_path(path=r'../quality/high/', mode='test')
+    low_test_image_path, low_test_mask_path, low_test_ids = get_path(path=r'../quality/low/', mode='test')
+
+    print(high_test_ids)
+    print(low_test_ids)
+    high_test_mask_30_collection, low_test_mask_30_collection = [], []
+    for h, l in zip(high_test_mask_path, low_test_mask_path):
+        h_mask, l_mask = get_image(h), get_image(l)
+        high_test_mask_30_collection.append(h_mask)
+        low_test_mask_30_collection.append(l_mask)
+    print(len(high_test_mask_30_collection), len(low_test_mask_30_collection))
+    high_test_masks_30 = np.concatenate(high_test_mask_30_collection, axis=0)
+    low_test_masks_30 = np.concatenate(low_test_mask_30_collection, axis=0)
+    print(high_test_masks_30.shape, low_test_masks_30.shape)
+    tree_iou = iou(high_test_masks_30[:, :, 1], low_test_masks_30[:, :, 1])
+    print(tree_iou)
+    overall_iou = iou(high_test_masks_30, low_test_masks_30)
+    print(overall_iou)
+
+
 #     initial_image_path, initial_mask_path, initial_image_id, rest_image_path, rest_mask_path, rest_image_id = get_split_path(
 #         path=r'../quality/high',
 #         mode='train',

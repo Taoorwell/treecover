@@ -113,8 +113,8 @@ palette = {0: (255, 255, 255),  # White
 
 
 def iou(y_true, y_pred):
-    numerator = np.sum(y_true[:, :, 1] * y_pred[:, :, 1])
-    denominator = np.sum(y_true[:, :, 1] + y_pred[:, :, 1])
+    numerator = np.sum(y_true[:, :, :] * y_pred[:, :, :])
+    denominator = np.sum(y_true[:, :, :] + y_pred[:, :, :])
     return numerator / (denominator - numerator)
 
 
