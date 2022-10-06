@@ -87,14 +87,14 @@ if __name__ == '__main__':
                 return initial_learning_rate * cosine_decay
 
 
-            strategy = tf.distribute.MirroredStrategy()
-            with strategy.scope():
-                model = U_Net(input_shape=(256, 256, 7),
-                              n_classes=n_classes,
-                              rate=0.0,
-                              mc=False,
-                              residual=True)
-                model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
+            # strategy = tf.distribute.MirroredStrategy()
+            # with strategy.scope():
+            model = U_Net(input_shape=(256, 256, 7),
+                          n_classes=n_classes,
+                          rate=0.0,
+                          mc=False,
+                          residual=True)
+            model.compile(optimizer=optimizer, loss=[loss_fn], metrics=[iou, tree_iou])
             # model.summary()
 
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
