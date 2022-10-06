@@ -51,7 +51,8 @@ def model_test(model, images_path, masks_path):
 
 
 if __name__ == '__main__':
-    mask_path = r'../quality/high/'
+    q = 'high'
+    mask_path = f'../quality/{q}/'
     gpus = tf.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -98,7 +99,7 @@ if __name__ == '__main__':
 
             learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_cosine_decay, verbose=0)
             # tensorboard
-            tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/random/'
+            tensorboard_callbacks = tf.keras.callbacks.TensorBoard(log_dir=f'tb_callback_dir/random/{q}/'
                                                                            f'unet_random_{int(t*40)}_{se}',
                                                                    histogram_freq=1)
 
@@ -109,7 +110,7 @@ if __name__ == '__main__':
                       validation_steps=len(valid_datasets),
                       verbose=0,
                       callbacks=[learning_rate_scheduler, tensorboard_callbacks])
-            model.save(f'checkpoints/random/unet_random_{int(t*40)}_{se}')
+            model.save(f'checkpoints/random/{q}/unet_random_{int(t*40)}_{se}')
             # model prediction on test dataset
             acc1, acc2 = model_test(model,
                                     images_path=test_image_path,
@@ -123,4 +124,4 @@ if __name__ == '__main__':
     df = pd.DataFrame({'N': Numbers, 'Seed': seeds, 'tree_iou': tree_ious, 'o_iou': o_ious})
     with pd.ExcelWriter(r'checkpoints/random/random.xlsx', mode='a',
                         engine='openpyxl', if_sheet_exists='replace') as writer:
-        df.to_excel(writer, sheet_name=f'high_mask_random')
+        df.to_excel(writer, sheet_name=f'{q}_mask_random')
